@@ -18,7 +18,9 @@ library(cowplot)
 library(alphahull)
 library(reshape2)
 
-setwd("C:/Users/zhaoa/Dropbox (HHMI)/LC6 downstream paper new/Code")
+setwd("C:/Users/zhaoa/Dropbox (HHMI)/sync_userA/Documents/ReiserGroup/p_LC6/LC6_code_R")
+
+# setwd("C:/Users/zhaoa/Dropbox (HHMI)/LC6 downstream paper new/Code")
 setwd("./") # set to this code's directory
 # source("someFunc.R") # load some useful functions
 
@@ -36,7 +38,7 @@ rgl::setupKnitr()
 # Buchner 71 eye map from Andrew Straw----------------------------------------------------------------------------------------------
 
 Npt <- 699
-buchner <- read.csv("buchner71_tp.csv", header = FALSE)
+buchner <- read.csv("data/buchner71_tp.csv", header = FALSE)
 buchner <- buchner[1:Npt,]
 buchner <- buchner / pi * 180
 
@@ -47,8 +49,6 @@ range(buchner[buchner[,2] > 70 & buchner[,2] < 110, 1]) # [-7, 160] as horizonta
 # range(buchner[buchner,2]) 
 
 buchner_phi <- c(-10, 160) # for longitude
-
-
 
 
 
@@ -93,7 +93,7 @@ LC6_skid <- anno_rightLC6[,"skid"]
 neu <-  read.neurons.catmaid(LC6_skid, .progress='text')
 LC6 <- neu
 
-altTrack <- c(8,14,19,39)
+altTract <- c(8,14,19,39)
 
 # target neurons
 anno_ipsi <- catmaid_query_by_annotation("^putative ss2036$")
@@ -533,7 +533,6 @@ colnames(LC6_post)[1] <- "ID"
 if (exists("LC6LC6")) {
   rm(LC6LC6)
 }
-
 for (j in 1:length(neu)) {
   # tar_pre <- neu[[j]]
   for (k in 1:length(neu)) {
@@ -2974,7 +2973,7 @@ i1 <- order(rowSums(sweep(xy_com_m, 2, xy_com_m[nt,], '-')^2), decreasing = F)[1
 i2 <- order(rowSums(sweep(xy_com_m, 2, xy_com_m[31,], '-')^2), decreasing = F)[1:(5+0)] #back
 i3 <- order(rowSums(sweep(xy_com_m, 2, xy_com_m[nb,], '-')^2), decreasing = F)[1:5] #ventral
 # i4 <- order(rowSums(sweep(xy_com_m, 2, xy_com_m[39,], '-')^2), decreasing = F)[1:(9+0)] #front
-# i4 <- i4[!(i4 %in% altTrack )]
+# i4 <- i4[!(i4 %in% altTract )]
 i4 <- c(1,4,48,46,45)
 i5 <- seq(1,65)[-c(i1,i2,i3,i4)]
 i_excl <- c(39,14,19,8) #alt tract
