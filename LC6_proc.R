@@ -988,9 +988,10 @@ ggplot(dfm, aes(factor(variable), value) ) +
   scale_colour_manual(values = c("#af8dc3", "forestgreen", rep('black',3)), guide=FALSE) +
   stat_summary(fun.min = function(z) { quantile(z,0.25) },
                fun.max = function(z) { quantile(z,0.75) },
-               geom = "errorbar", position = position_nudge(x = 0.2, y = 0),
+               geom = "linerange", position = position_nudge(x = 0.2, y = 0),
                colour = 'black', size = 1, width = .2 ) +
-  stat_summary(fun = median, geom = "point",  colour = 'black', size = 5,position = position_nudge(x = 0.2, y = 0) ) +
+  stat_summary(fun.min = median, geom = "errorbar",  colour = 'black', size = 1, width=.2,
+               position = position_nudge(x = 0.2, y = 0) ) +
   coord_cartesian(ylim = c(-.5, 1)) +
   theme_minimal_grid() +
   labs(title = "4 mapping", x='quantity', y='RI') 
@@ -1174,7 +1175,7 @@ for (k in 1:18) {
   
   ang <- (k-1)*10
   R_mat <- quaternion3D(vr, ang)
-  
+
   xy_com_m_rot <- sph2cartZ(cbind(1, xy_com_m_tp)) %*% t(R_mat) #ccw on S2
   xy_com_m_rot <- cart2sphZ(xy_com_m_rot)[, c(3,2)]
   xy_com_m_rot[,1] <- if_else(xy_com_m_rot[,1] > pi, xy_com_m_rot[,1] - 2*pi, xy_com_m_rot[,1])
@@ -1197,8 +1198,8 @@ swapMax <- 64*(64-1)/2
 N_swap_rot_index <- 1 - 2*N_swap_rot/swapMax
 
 
-df <- data.frame(cbind(seq(1,65), N_swap_rot_index)) 
-colnames(df) <- c('neu', seq(0,170,by = 10))
+df <- data.frame(cbind(seq(1,65), N_swap_rot_index, N_swap_rot_index[,1])) 
+colnames(df) <- c('neu', seq(0,180,by = 10))
 dfm <- melt(df, id = 'neu')
 
 dev.new()
@@ -1210,9 +1211,10 @@ ggplot(dfm, aes(factor(variable), value) ) +
   # geom_jitter(colour = 'black', size = 4, height = 0, width = 0.1) +
   stat_summary(fun.min = function(z) { quantile(z,0.25) },
                fun.max = function(z) { quantile(z,0.75) },
-               geom = "errorbar", position = position_nudge(x = 0, y = 0),
-               colour = 'black', size = 1, width = .2 ) +
-  stat_summary(fun = median, geom = "point",  colour = 'black', size = 5,position = position_nudge(x = 0, y = 0) ) +
+               geom = "linerange", position = position_nudge(x = 0, y = 0),
+               colour = 'black', size = 1) +
+  stat_summary(fun.min = median, geom = "errorbar",  colour = 'black', size = 1, width=.2,
+               position = position_nudge(x = 0.2, y = 0) ) +
   coord_cartesian(ylim = c(-.5, 1)) +
   theme_minimal_grid() +
   labs(title = "index rotation LO", x='Angle', y='RI') 
@@ -1247,8 +1249,8 @@ swapMax <- 64*(64-1)/2
 N_swap_1D_rot_index <- 1 - 2*N_swap_1D_rot/swapMax
 
 
-df <- data.frame(cbind(seq(1,65), N_swap_1D_rot_index)) 
-colnames(df) <- c('neu', seq(0,170,by = 10))
+df <- data.frame(cbind(seq(1,65), N_swap_1D_rot_index, N_swap_1D_rot_index[,1])) 
+colnames(df) <- c('neu', seq(0,180,by = 10))
 dfm <- melt(df, id = 'neu')
 
 dev.new()
@@ -2022,3 +2024,11 @@ dev.new()
 plvl[[10]]
 
 
+
+# stats test ------------------------------------------------------------------------------------------------------
+
+# KS test
+ks.test(LC6_avgdist_wt, mat_avgdist_rand)
+
+# Mann-Whitney
+wilcox.test(LC6_avgdist_wt, mat_avgdist_rand, alternative = 'less')

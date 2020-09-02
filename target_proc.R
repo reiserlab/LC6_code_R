@@ -1,5 +1,8 @@
 # LC6 downstream neurons analysis
 
+# - target color
+pal_target <- pnw_palette("Bay",9)
+pal_target_a <- adjustcolor(pal_target, alpha.f = 0.6)
 
 # Figure S7, target neuron RF wt by synapses ----------------------------------------------------------------------
 
@@ -465,7 +468,7 @@ points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = "cyan", 
 target_names <- c(paste("BiL_", biL_skid, sep = ""), 
                   paste("BiR_", biR_skid, sep = ""), 
                   paste("Ipsi_", ipsi_skid, sep = ""))
-target_pal <- pnw_palette("Bay",9)
+pal_target <- pnw_palette("Bay",9)
 
 for (j in 1:9) {
   nopen3d()
@@ -474,8 +477,8 @@ for (j in 1:9) {
   # shade3d(v14, alpha=0.05)
   shade3d(glo_vol, col = 'grey90', alpha = 0.3)
   tar <- neu_target[[j]]
-  plot3d(tar, col = target_pal[j], lwd = 3)
-  points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = target_pal[j], size = 20)
+  plot3d(tar, col = pal_target[j], lwd = 3)
+  points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = pal_target[j], size = 20)
   title3d(target_names[j])
   rgl.snapshot(filename = paste(target_names[j], ".png", sep = ''),fmt = "png")
 }
@@ -1103,14 +1106,17 @@ for (ni in 1:length(LC6)) {
   distal_points <- igraph::graph.dfs(targ, root=ind, unreachable=FALSE, neimode='out')$order
   tar_distal <- subset(tar, distal_points)
   sp <- spine(tar_distal, UseStartPoint = T)
-  sp_glo <- subset(sp, pointsinside(sp, surf=glo.msh, rval='distance') > -5000)
+  sp_glo <- subset(sp, pointsinside(sp, surf=glo.msh, rval='distance') > -500)
   LC6_sp_glo_rs[[ni]] <- resample(sp_glo, stepsize = 400)
 }
 
-ind_bi_ipsi <- c(48,1,4,39,44,14,19,8) #front
+# choose 8 LC, frontal (delta RF), lateral or random
+ind_bi_ipsi_front <- c(48,1,4,39,44,14,19,8) #front
+ind_bi_ipsi_lat <- c(24,25,56,55,57,9,26,2) #lateral
 
-# ind_bi_ipsi <- c(24,25,56,55,57,9,26,2) #lateral
-# 
+ind_bi_ipsi <- ind_bi_ipsi_front
+# ind_bi_ipsi <- ind_bi_ipsi_lat
+
 # ind_bi_ipsi <- sample(65, 8) # random
 
 # -- ref neu
@@ -1128,10 +1134,11 @@ neu_target_rs <- resample(neu_target, stepsize = 400)
 # identify3d(xyzmatrix(LC6[[i_AP[1]]]$d))
 
 dL <- 500 # half thickness of cross section
-range_x <- c(356000, 440000)
+# range_x <- c(356000, 440000)
+range_x <- c(358000, 438000)
 N_cs <- diff(range_x) / 2 / dL
 
-xp <- c(-1, 0, 0)
+xp <- c(1, 0, 0)
 
 yz_ls <- list()
 yz_ls_tar <- list()
@@ -1140,32 +1147,30 @@ ref_d <- c()
 
 for (j in 1:N_cs) {
   
-  ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
+  # ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
+  ii <- o_xyz_m[,1] > (range_x[1] + (j-1)*2*dL) & o_xyz_m[,1] < (range_x[1] + (j)*2*dL)
   o_xyz <- colMeans(o_xyz_m[ii,])
   d1 <- (o_xyz + xp*dL) %*% xp #distance to plane
   d2 <- (o_xyz - xp*dL) %*% xp #distance to plane
   
   # use 2 planes
-  z_ind_1 <- apply(z_xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
-  # y_ind_2 <- sqrt(rowSums(sweep(y_xyz_m_sp, MARGIN = 2, STATS = o_xyz, '-')^2)) < 20000
-  z_ind <- z_ind_1
+  z_ind <- apply(z_xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
   if (sum(z_ind) == 1 ) {
     z_xyz <- z_xyz_m[z_ind,] 
   } else {
     z_xyz <- colMeans(z_xyz_m[z_ind,]) 
   }
+  z_xyz[1] <- o_xyz[1] # use this plane as y-z
   zp <- z_xyz - o_xyz
-  zp <- zp - c(zp %*% xp)*xp # +z
+  # zp <- zp - c(zp %*% xp)*xp # +z
   
   ref_d <- c(ref_d, sqrt(sum(zp^2))) #unit length
   
   pt_yz <- matrix(NA, ncol = 2, nrow = length(LC6))
   for (k in 1:nrow(pt_yz)) {
     xyz_m <- xyzmatrix(LC6_sp_glo_rs[[k]]$d)
-    # xyz_m <- xyz_m[xyz_m[,1] > glu_div[j] & xyz_m[,1] < glu_div[j+1],]
-    xyz_m_ind_1 <- apply(xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
-    # xyz_m_ind_2 <- sqrt(rowSums(sweep(xyz_m, MARGIN = 2, STATS = o_xyz, '-')^2)) < 10000
-    xyz_m_ind <- xyz_m_ind_1 #& xyz_m_ind_2 # within 2 planes and 20 um within ref pt
+    # xyz_m <- xyz_m[xyz_m[,1] > glo_div[j] & xyz_m[,1] < glo_div[j+1],]
+    xyz_m_ind <- apply(xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
     if (sum(xyz_m_ind) > 0) {
       if (sum(xyz_m_ind) == 1) { #if single pt
         xyz <- xyz_m[xyz_m_ind,] 
@@ -1229,19 +1234,40 @@ for (j in 1:N_cs) {
 }
 
 
+# dd_ls_tar_front <- dd_ls_tar
+# dd_ls_tar_lateral <- dd_ls_tar
 
-# - distance
+# - control, max diameter in each cross section
+x <- seq(range_x[1], range_x[2], by = dL)
+y <- seq(182500, 204500, by = dL)
+z <- seq(131000, 161000, by = dL)
+glo_xyzgrid <- expand.grid(x, y, z)
+glo_xyzgrid <- subset(glo_xyzgrid, pointsinside(glo_xyzgrid, surf=glo.msh, rval='distance') > -dL/2)
+colnames(glo_xyzgrid) <- c('x','y','z')
+
+cs_dia <- matrix(ncol = 1, nrow = N_cs)
+for (j in 1:N_cs) {
+  # ii <- glo_xyzgrid[,1] < (range_x[2] - (j-1)*2*dL) & glo_xyzgrid[,1] > (range_x[2] - (j)*2*dL)
+  ii <- glo_xyzgrid[,1] > (range_x[1] + (j-1)*2*dL) & glo_xyzgrid[,1] < (range_x[1] + (j)*2*dL)
+  xyz <- glo_xyzgrid[ii,]
+  cs_dia[j] <- max(dist(xyz))
+}
+
+
+# PLOT, Figure S7E
 dd_tar <- matrix(unlist(dd_ls_tar), ncol = 9, byrow = T)
-dd_tar <- dd_tar[seq(nrow(dd_tar),1), ]
+# dd_tar <- dd_tar[seq(nrow(dd_tar),1), ] #reverse
 
-df <- data.frame(dd_tar[1:80, c(3,4,7)])
+# --- choose one
+ii_target <- c(3,7) #2
+# ii_target <- c(4,5,6,8,9) #rest
+
+df <- data.frame(dd_tar[1:80, ii_target])
 df <- cbind(seq(1,80), df)
-colnames(df) <- c('pos', 3,4,7)
+colnames(df) <- c('pos', ii_target)
 
-df <- data.frame(dd_tar[1:80, 3:9])
-df <- cbind(seq(1,80), df)
-colnames(df) <- c('pos', 3,4,5,6,7,8,9)
 
+df$dia <- cs_dia[1:80]/2
 dfm <- melt(df, id = 'pos')
 
 tick_x <- rep("", 81)
@@ -1249,16 +1275,16 @@ tick_x[seq(0,80,by = 20)+1] <- seq(0,80,by = 20)
 
 
 dev.new()
-# pdf(file = paste("avg dist to lat LC.pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+# pdf(file = paste("avg dist to lat LC rest.pdf",sep = ''), width = 8, height = 4,pointsize=12,family="Helvetica", useDingbats = F)
 
 ggplot(dfm, aes(x=pos, y=value) ) + 
-  geom_point( ) +
+  # geom_point( ) +
   geom_line(aes(colour = factor(variable), group = variable), lwd = 3) +
   # coord_cartesian(ylim = c(-.5, 1)) +
   # theme_minimal_grid() +
   # theme_bw() +
-  # scale_colour_manual(values = pnw_palette("Bay",9)[c(3,4,7)] ) +
-  scale_colour_manual(values = pnw_palette("Bay",9)[3:9] ) +
+  scale_colour_manual(values = c(pal_target[ii_target], 'grey'),
+                      labels = c(target_names[ii_target], "radius")) +
   scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0,8000, by=2000), labels = seq(0,8, by=2)) +
   theme(panel.background = element_blank(), 
@@ -1266,12 +1292,12 @@ ggplot(dfm, aes(x=pos, y=value) ) +
         # panel.grid.minor.x = element_line(colour = 'black', size = 0.2),
         axis.ticks.length.x = unit(-.25, "cm"),
         axis.text.x = element_text(margin = margin(t = .3, unit = "cm"))) +
-  labs(title = "avg dist to all LC", x='glomerulus axis [um]', y='avg dist [um]') 
+  labs(title = "avg dist to lat LC", x='glomerulus axis [um]', y='avg dist [um]') 
 
 dev.off()
 
 
-# PLOT cartoon
+# Figure S7D, glo with 80 cuts
 nopen3d()
 par3d('windowRect' = c(100,100,1700,1700))
 shade3d(glo.msh, col='grey',alpha = 0.5, lit=F)
@@ -1280,52 +1306,54 @@ par3d("FOV" = 0)
 segments3d(rbind(c(range_x[1],210000,150000), c(range_x[1]+80*2*dL,210000,150000)), lwd = 5, col = 'black')
 segments3d(rbind(c(range_x[1]+80*2*dL,210000,150000),
                  c(range_x[1]+80*2*dL,210000-cos(30/180*pi)*10000,150000-sin(30/180*pi)*10000)), lwd = 5)
-segments3d(rbind(c(range_x[2]-20*2*dL,230000-cos(30/180*pi)*12000,130000-sin(30/180*pi)*12000),
-                 c(range_x[2]-20*2*dL,230000-cos(30/180*pi)*32000,130000-sin(30/180*pi)*32000)),
+segments3d(rbind(c(range_x[1]+20*2*dL,230000-cos(30/180*pi)*12000,130000-sin(30/180*pi)*12000),
+                 c(range_x[1]+20*2*dL,230000-cos(30/180*pi)*25000,130000-sin(30/180*pi)*25000)),
            lwd = 5, col = 'black')
 # axes3d(c('x','y','z')); title3d('','','x','y','z')
 
 # rgl.snapshot(filename = "80 sectors.png",fmt = "png")
 
 
-# PLOT cable
-m <- 30
+# # PLOT cable
+# m <- 30
+# 
+# df_plt <- rbind(yz_ls[[m]][c(ind_sep,ind_bi_ipsi), ], yz_ls_tar[[m]][c(3,4,7),]) %>% 
+#   as.data.frame()
+# df_plt$colcol <- factor(c(rep(1,2),
+#                           rep(2,length(ind_bi_ipsi)),
+#                           rep(3,2),
+#                           rep(4,1)))
+# colnames(df_plt) <- c('y','z','colcol')
+# gpl <- ggplot() +
+#   geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 20 ) +
+#   scale_colour_manual(values = col4,
+#                       breaks = c("1", "2", "3","4"),
+#                       labels = c("ref", "front", "bi", "ipsi") ) +
+#   guides(colour = guide_legend("groups") )+
+#   # scale_y_reverse() +
+#   # xlim(xrange) +
+#   # ylim(yrange) +
+#   coord_fixed(ratio = 1) +
+#   theme_minimal() +
+#   # theme_void() +
+#   # geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
+#   # annotate("text", x = 0.05, y = -0.8, label = '1 um') +
+#   labs(title = m)
+# 
+# windows(record = F, width = 8, height = 8)
+# # pdf(file = paste(m, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+# gpl
+# 
+# dev.off()
 
-df_plt <- rbind(yz_ls[[m]][c(ind_sep,ind_bi_ipsi), ], yz_ls_tar[[m]][c(3,4,7),]) %>% 
-  as.data.frame()
-df_plt$colcol <- factor(c(rep(1,2),
-                          rep(2,length(ind_bi_ipsi)),
-                          rep(3,2),
-                          rep(4,1)))
-colnames(df_plt) <- c('y','z','colcol')
-gpl <- ggplot() +
-  geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 20 ) +
-  scale_colour_manual(values = col4,
-                      breaks = c("1", "2", "3","4"),
-                      labels = c("ref", "front", "bi", "ipsi") ) +
-  guides(colour = guide_legend("groups") )+
-  # scale_y_reverse() +
-  # xlim(xrange) +
-  # ylim(yrange) +
-  coord_fixed(ratio = 1) +
-  theme_minimal() +
-  # theme_void() +
-  # geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
-  # annotate("text", x = 0.05, y = -0.8, label = '1 um') +
-  labs(title = m)
-
-windows(record = F, width = 8, height = 8)
-# pdf(file = paste(m, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-gpl
-
-dev.off()
 
 
+# Figure 7E, cross section, 
 
-# -- PLOt cross section
 j <- 20
 
-ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
+ii <- o_xyz_m[,1] > (range_x[1] + (j-1)*2*dL) & o_xyz_m[,1] < (range_x[1] + (j)*2*dL)
+# ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
 o_xyz <- colMeans(o_xyz_m[ii,])
 d1 <- (o_xyz + xp*dL) %*% xp #distance to plane
 d2 <- (o_xyz - xp*dL) %*% xp #distance to plane
@@ -1355,9 +1383,9 @@ for (k in 1:nrow(pt_yz)) {
 pt_yz[ind_sep[1],] <- c(0,0)
 pt_yz[ind_sep[2],] <- c(0,1)
 
-k <- 7
-ii <- pointsinside(xyzmatrix(neu_target_rs[[k]]$d), surf=glo.msh, rval='logical') 
-xyz_m <- xyzmatrix(neu_target_rs[[k]]$d)[ii,]
+it <- 3
+ii <- pointsinside(xyzmatrix(neu_target_rs[[it]]$d), surf=glo.msh, rval='logical') 
+xyz_m <- xyzmatrix(neu_target_rs[[it]]$d)[ii,]
 xyz_m_ind <- apply(xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
 xyz_m_in <- xyz_m[xyz_m_ind,,drop=F]
 # xyz <- colMeans(xyz_m[xyz_m_ind,]) 
@@ -1373,19 +1401,21 @@ for (k in 1:nrow(pt_yz_k)) {
 }
 
 df <- rbind(pt_yz, pt_yz_k)
-df <- cbind(df, c(rep(1,65), rep(2,nrow(pt_yz_k))))
+col_ind <- rep(1,65)
+col_ind[ind_bi_ipsi_front] <- 2
+df <- cbind(df, c(col_ind, rep(3,nrow(pt_yz_k))))
 df <- as.data.frame(df)
 colnames(df) <- c('x','y','type')
 
 gpl <- ggplot(df) +
-  geom_point(aes(x=x, y=y, colour = factor(type), size = type), shape = 16, alpha=0.5 ) +
-  scale_colour_manual(values = c('black', 'red'),
-                      breaks = c("1", "2"),
-                      labels = c("LC6", "LC6G2") ) +
+  geom_point(aes(x=x, y=y, colour = factor(type), size = type), shape = 16, alpha=0.8 ) +
+  scale_colour_manual(values = c('grey', col4_a1[4], pal_target[it]),
+                      breaks = c("1", "2", "3"),
+                      labels = c("LC6", "LC6 front", neu_target[[it]]$NeuronName) ) +
   scale_size(range = c(4,6)) +
   coord_fixed(ratio = 1) +
   theme_void() +
-  geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
+  geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[it]*1e3, yend = -0.5), size=2, lineend = "round") +
   annotate("text", x = 0.05, y = -0.8, label = '1 um') +
   labs(title = "cross section occupancy")
 
@@ -1396,8 +1426,185 @@ gpl
 dev.off()
 
 
-# - control, max diameter in each cross section
-x <- seq(range_x[1], range_x[2], by = dL)
-y <- seq(182500, 204500, by = dL)
-z <- seq(131000, 161000, by = dL)
-glo_xyzgrid <- expand.grid(x, y, z)
+
+# - Figure S7, 8 LC choice
+
+windows(record = F, width = 8, height = 8)
+
+# pdf(file = "2 groups of 8 LO.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+
+bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
+bd_theta <- seq(1, 180, by = 1)
+xy_bd <- matrix(ncol = 2)
+bd_grid <- expand.grid(bd_phi, bd_theta)
+plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F)
+i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
+for (j in 1:length(xy_poly)) {
+  xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
+  if (j %in% ind_bi_ipsi_front) {
+    # geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 18 )
+    points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4[4], cex = 3, pch = 16)
+    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i1i, pos = 1, offset = 0.3)
+    # i1i <- i1i + 1
+  }
+  else if (j %in% ind_bi_ipsi_lat) {
+    points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4[2], cex = 3, pch = 16)
+    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i3i, pos = 1, offset = 0.3)
+    # i3i <- i3i + 1
+  }
+  else {
+    points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col="grey", cex = 2, pch = 16) 
+  }
+}
+xy_bd <- xy_bd[-1,]
+hpts_2 <- chull(xy_bd)
+hpts_2 <- c(hpts_2, hpts_2[1])
+xy_bd_chull <- xy_bd[hpts_2,] # hull edge points
+polygon(xy_bd_chull)
+lines(rbind(c(-11,180), c(-2,180)), lwd = 1)
+text(-5, 180, labels = expression(paste("9",degree)), pos = 1, offset = 0.3)
+lines(rbind(c(-11,180), c(-11,171)), lwd = 1)
+text(-11, 175, labels = expression(paste("9",degree)), pos = 2, offset = 0.2)
+lines(rbind(c(0,0), c(0,180)), lwd = 1) 
+text(0, -5, labels = "front", pos = 1, offset = 0)
+lines(rbind(c(90,0), c(90,180)), lwd = 1)
+text(90, -5, labels = expression(paste("side 90",degree)), pos = 1, offset = 0)
+lines(rbind(c(-12,90), c(162,90)), lwd = 1)
+text(-17, 90, labels = "equator", pos = 1, offset = 0, srt = 90)
+
+dev.off()
+
+
+
+# target neuite vs syn --------------------------------------------------------------------------------------------
+
+# break_x <- seq(340000, 450000, length.out = 23)
+
+nmb <- 16
+break_x <- seq(range_x[1] - 2*dL*nmb, range_x[2] + 2*dL*nmb, by = 2*dL*4)
+
+# break_x <- glo_div
+
+tar_syn_xbin <- matrix(ncol = 9, nrow = length(break_x)-1)
+for (j in 1:9) {
+  tar_syn_xbin[,j] <- hist(conn_LC6_tar[[j]]$x, breaks = break_x, plot = F)$counts
+}
+
+# moving 3-avg
+tar_syn_xbin3 <- matrix(ncol = 9, nrow = length(break_x)-3)
+for (j in 1:nrow(tar_syn_xbin3)) {
+  tar_syn_xbin3[j,] <- colMeans(tar_syn_xbin[j:(j+2),]) %>% round(.,1)
+}
+
+# tar_syn_xbin <- cbind(hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids, tar_syn_xbin)
+xx <- hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids[2:(length(break_x)-2)]
+xx <- (xx - range_x[1]) / 2/dL
+xx <- xx[3:(length(xx)-2)]
+yy <- tar_syn_xbin3
+yy <- yy[3:(2+length(xx)), ]
+df <- as.data.frame(cbind(xx, yy))
+colnames(df) <- c('mid', seq(1,9))
+dfm <- melt(df, id = 'mid')
+
+dev.new()
+# pdf(file = "#syn per 12um 3bin avg.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+
+ggplot(dfm, aes(x=mid, y=value) ) + 
+  geom_point(size = 3 ) +
+  geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
+  # coord_cartesian(ylim = c(-.5, 1)) +
+  # theme_minimal_grid() +
+  scale_colour_manual(values = pal_target, labels = target_names ) +
+  scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0),limits = c(0,80)) +
+  theme(panel.background = element_blank(), 
+        axis.line = element_line(color='black'),
+        axis.ticks.length.x = unit(-.25, "cm"),
+        axis.text.x = element_text(margin = margin(t = .3, unit = "cm"))) +
+  labs(title = "target syn histo", x='glomerulus axis[um]', y='count') 
+
+dev.off()
+
+
+# -- node hist
+neu_target_rs <- resample(neu_target, stepsize = 400)
+
+tar_node_xbin <- matrix(ncol = 9, nrow = length(break_x)-1)
+for (j in 1:9) {
+  i1 <- pointsinside(xyzmatrix(neu_target_rs[[j]]$d), surf=glo.msh, rval='distance') > -500
+  i2 <- xyzmatrix(neu_target_rs[[j]]$d)[,1] > break_x[1] & xyzmatrix(neu_target_rs[[j]]$d)[,1] < tail(range_x,1)
+  xx <- xyzmatrix(neu_target_rs[[j]]$d)[i1 & i2,'X']
+  tar_node_xbin[,j] <- hist(xx, breaks = break_x, plot = F)$counts
+}
+
+
+# moving 3-avg
+tar_node_xbin3 <- matrix(ncol = 9, nrow = length(break_x)-3)
+for (j in 1:nrow(tar_node_xbin3)) {
+  tar_node_xbin3[j,] <- colMeans(tar_node_xbin[j:(j+2),]) %>% round(.,1)
+}
+
+xx <- hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids[2:(length(break_x)-2)]
+xx <- (xx - range_x[1]) / 2/dL
+xx <- xx[3:(length(xx)-2)]
+yy <- tar_node_xbin3
+yy <- yy[3:(2+length(xx)), ] * 0.4 # [um]
+df <- as.data.frame(cbind(xx, yy))
+colnames(df) <- c('mid', seq(1,9))
+dfm <- melt(df, id = 'mid')
+
+
+dev.new()
+# pdf(file = "neurite in um 3bin avg.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+
+ggplot(dfm, aes(x=mid, y=value) ) + 
+  geom_point(size =3 ) +
+  geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
+  # coord_cartesian(ylim = c(-.5, 1)) +
+  # theme_minimal_grid() +
+  scale_colour_manual(values = pal_target, labels = target_names ) +
+  scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0),limits = c(0,80)) +
+  theme(panel.background = element_blank(), 
+        axis.line = element_line(color='black'),
+        axis.ticks.length.x = unit(-.25, "cm"),
+        axis.text.x = element_text(margin = margin(t = .3, unit = "cm"))) +
+  labs(title = "target node histo", x='glomerulus axis[um]', y='cable length [um]') 
+
+dev.off()
+
+# -- ratio
+xx <- hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids[2:(length(break_x)-2)]
+xx <- (xx - range_x[1]) / 2/dL
+xx <- xx[3:(length(xx)-3)]
+yy <- tar_syn_xbin3 / tar_node_xbin3
+yy <- yy[3:(2+length(xx)), ] * 2.5 #per um
+df <- as.data.frame(cbind(xx, yy))
+colnames(df) <- c('mid', seq(1,9))
+dfm <- melt(df, id = 'mid')
+
+
+# colnames(df) <- c('mid', seq(1,9))
+# df$mid <- hist(xx, breaks = break_x, plot = F)$mids
+# dfm <- melt(df, id = 'mid')
+
+dev.new()
+
+# pdf(file = paste("syn density.pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+
+ggplot(dfm, aes(x=mid, y=value) ) + 
+  geom_point(size = 3 ) +
+  geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
+  # coord_cartesian(ylim = c(-.5, 1)) +
+  # theme_minimal_grid() +
+  scale_colour_manual(values = pal_target, labels = target_names ) +
+  # scale_x_continuous(breaks = seq(range_x[1],range_x[1]+80*2*dL, by=2*dL), limits = c(340000,450000),labels = tick_x, expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0,1, by=0.25), labels = seq(0,1, by=0.25), limits = c(0,1)) +
+  scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0), limits = c(0,80)) +
+  theme(panel.background = element_blank(), 
+        axis.line = element_line(color='black'),
+        axis.ticks.length.x = unit(-.25, "cm"),
+        axis.text.x = element_text(margin = margin(t = .3, unit = "cm"))) +
+  labs(title = "target syn density", x='glomerulus axis[um]', y='syn count per um') 
+
+dev.off()
+
+

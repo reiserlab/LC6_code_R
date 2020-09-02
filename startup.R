@@ -207,21 +207,21 @@ RI <- function(pt0, pt1){
 # LC6 <- neu
 # 
 # altTract <- c(8,14,19,39)
-# 
-# # -- target neurons
-# anno_ipsi <- catmaid_query_by_annotation("^putative ss2036$")
-# ipsi_skid <- anno_ipsi[,"skid"]
-# neu_ipsi <-  read.neurons.catmaid(ipsi_skid, .progress='text') 
-# 
-# # anno_biL <- catmaid_query_by_annotation("^LC6 target - bilateral$")
-# # biL_skid <- anno_biL$skid # LHS x4 , 
-# # biL_skid <- biL_skid[1:2] #select 2
-# biL_skid <- c(3149978, 3262999)
-# neu_biL <- read.neurons.catmaid(biL_skid, .progress='text') 
-# 
-# biR_skid <- c(3154013, 3155729) #RHS x2
-# neu_biR <- read.neurons.catmaid(biR_skid, .progress='text')
-# 
+
+# -- target neurons
+anno_ipsi <- catmaid_query_by_annotation("^putative ss2036$")
+ipsi_skid <- anno_ipsi[,"skid"]
+neu_ipsi <-  read.neurons.catmaid(ipsi_skid, .progress='text')
+
+# anno_biL <- catmaid_query_by_annotation("^LC6 target - bilateral$")
+# biL_skid <- anno_biL$skid # LHS x4 ,
+# biL_skid <- biL_skid[1:2] #select 2
+biL_skid <- c(3149978, 3262999)
+neu_biL <- read.neurons.catmaid(biL_skid, .progress='text')
+
+biR_skid <- c(3154013, 3155729) #RHS x2
+neu_biR <- read.neurons.catmaid(biR_skid, .progress='text')
+
 # neu_target <- c(neu_biL, neu_biR, neu_ipsi)
 # 
 # # -- TM5
