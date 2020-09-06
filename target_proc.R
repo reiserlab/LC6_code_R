@@ -6,6 +6,7 @@ pal_target_a <- adjustcolor(pal_target, alpha.f = 0.6)
 
 # Figure S7, target neuron RF wt by synapses ----------------------------------------------------------------------
 
+
 # PLOT,  Gaussian around each com with synap# as height,  cp data via binning
 ii_inpoly <- sp::point.in.polygon(bd_grid[,1], bd_grid[,2], xy_bd_chull[,1], xy_bd_chull[,2])
 plvl <- list()
@@ -37,6 +38,7 @@ for (j in 1:length(neu_target)) {
     A <- conn_target[[j]][k,"tofrom_glo"]
     # if (A >= LC6_tar_median[[j]]) { # selected neuron
       grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
+      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/2)^2 - (x[2]-y0)^2/(r_xy/2)^2))
     # }
   }
   
@@ -99,7 +101,7 @@ plvl[[9]]
 
 
 
-#  Figure 6C, sum up cell type ------------------------------------------------------------------------------------
+#  Figure 7C, sum up cell type ------------------------------------------------------------------------------------
 
 ii_inpoly <- sp::point.in.polygon(bd_grid[,1], bd_grid[,2], xy_bd_chull[,1], xy_bd_chull[,2])
 plvl <- list()
@@ -119,9 +121,10 @@ for (j in 1:length(conn_target_agglo_sum)) {
     x0 <- (xy_com[[k]]["phi_deg"])
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- conn_target_agglo_sum[[j]][k,"tofrom_glo"]
-    if (A > 0) { # selected neuron
+    # if (A > 0) { # selected neuron
       grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
-    }
+      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/3*2)^2 - (x[2]-y0)^2/(r_xy/3*2)^2))
+    # }
   }
   simdata[[j]] <- grid_Gaussian
   simdata_df[[j]] <- simdata[[j]]
@@ -154,6 +157,7 @@ for (j in 1:length(conn_target_agglo_sum)) {
   
   plvl[[j]] <- plvl[[j]] +
     geom_contour(data = simdata_df[[j]], aes(x,y,z=z), breaks = c(0.71), color = "blue", alpha = 1, lwd = 1)
+
 }
 
 windows(record = F, width = 8, height = 8)
@@ -428,7 +432,7 @@ ggdraw() +
 
 
 
-# Figure 6A, targets with volume ref --------------------------------------------------------------------------
+# Figure 7A, targets with volume ref --------------------------------------------------------------------------
 
 nopen3d()
 par3d('windowRect' = c(100,100,1100,1100))
@@ -888,7 +892,7 @@ windows(record = F, width = 8, height = 8)
 plvl_ipsi[[7]]
 
 
-# -- Figure supp, ephys contours
+# -- Figure S3 , ephys contours
 for (k in 1:4) {
   pdf(file = paste("ephys_bi_contour_", k, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
   print(plvl_bi_ct[[k]])
@@ -909,7 +913,7 @@ plvl_ol[[1]]
 windows(record = F, width = 8, height = 8)
 plvl_ol[[2]] 
 
-# -- Figure supp, bi - ipsi, indiv exp
+# -- Figure S7, bi - ipsi, indiv exp
 windows(record = F, width = 8, height = 8)
 plvl_ol_em[[1]] 
 windows(record = F, width = 8, height = 8)

@@ -311,6 +311,7 @@ for (j in 1:length(xy_poly)) {
 
 # Figure 5D, LC6 in eye coord
 windows(record = F, width = 8, height = 8)
+# pdf(file = "LC6 LO.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
 bd_theta <- seq(1, 180, by = 1)
 xy_bd <- matrix(ncol = 2)
@@ -331,7 +332,7 @@ for (j in 1:length(xy_poly)) {
   else {
     polygon(xy_poly[[j]][,c('phi_deg', 'theta_deg')], col = "cyan", border = 'black', density = 20, angle = j*2, lwd = 2)
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col="blue", cex = 1.5, pch = 20) #pch=1 circle, 32+j ASCII
-    text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = j, pos = 1, offset = 0.3)
+    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = j, pos = 1, offset = 0.3)
   }
 }
 xy_bd <- xy_bd[-1,]
@@ -350,6 +351,7 @@ text(90, -5, labels = expression(paste("side 90",degree)), pos = 1, offset = 0)
 lines(rbind(c(-12,90), c(162,90)), lwd = 3)
 text(-17, 90, labels = "equator", pos = 1, offset = 0, srt = 90)
 
+dev.off()
 
 # Figure S6A, LC6 overlap
 bd_phi2 <- seq(buchner_phi[1], buchner_phi[2], by = 2)
@@ -608,7 +610,56 @@ rgl.light(theta = 30, phi = 30)
 # rgl.snapshot(filename = "corssSection.png",fmt = "png")
 
 
+#  avg radius of LC6 RF -------------------------------------------------------------------------------------------
+
+avg_size_xy <- c()
+for (j in 1:length(neu)) {
+  tmp <- as.data.frame(xy_poly[[j]])
+  avg_size_xy <- c(avg_size_xy, (max(tmp$theta_deg)-min(tmp$theta_deg)+max(tmp$phi_deg)-min(tmp$phi_deg))/4)
+}
+r_xy <- mean(avg_size_xy)
+# half-width 2*sqrt(-log(0.5))*r_xy = 2*sqrt(log(2))*r_xy
+# plot Gaussian around each com with synap# as height
+
 # cable plot axon -----------------------------------------------------------------------------------------------
+
+# - make one LC6 RF polygon
+
+disk_theta <- sqrt(-log(0.5))*(r_xy/3*2)*2 # radius in deg
+disk_phi <- seq(0, 359, by = 10)
+LC6_RF_avg <- expand.grid(disk_theta, disk_phi)
+colnames(LC6_RF_avg) <- c('theta', 'phi')
+LC6_RF_avg %<>% as_tibble() %>%
+  mutate(x = sin(theta/180*pi)*cos(phi/180*pi), y = sin(theta/180*pi)*sin(phi/180*pi), z = cos(theta/180*pi)) %>%
+  data.matrix()
+
+LC6_RF_poly <- list()
+j <- 10
+for (j in c(10,51)) {
+  t <- xy_com[[j]]['theta_deg']/180*pi
+  p <- xy_com[[j]]['phi_deg']/180*pi
+  Ry <- matrix(c(cos(t), 0, sin(t),
+                 0, 1, 0,
+                 -sin(t), 0, cos(t)),
+               ncol = 3, byrow = T)
+  Rz <- matrix(c(cos(p), -sin(p), 0,
+                 sin(p), cos(p), 0,
+                 0, 0, 1),
+               ncol = 3, byrow = T)
+  R <- Rz %*% Ry
+  LC6_RF_poly[[j]] <- LC6_RF_avg[,c('x','y','z')] %*% t(R)
+  colnames(LC6_RF_poly[[j]]) <- c('x','y','z')
+  
+  LC6_RF_poly[[j]] %<>% as_tibble() %>%
+    mutate(theta = acos(z)) %>%
+    mutate(phi = 2*pi*(y < 0) + (-1)^(y < 0)*acos(x/sin(theta))) %>%
+    mutate(theta = theta/pi*180, phi = phi/pi*180) %>%
+    # mutate(theta = replace(phi, phi > 180, phi - 360)) %>% # not working
+    mutate(phi = if_else(phi > 180, phi - 360, phi)) %>% #move to [-pi pi]
+    transmute(phi, theta) %>%
+    data.matrix()
+}
+
 
 # - Figure 5E, chosen neurons i1, i2 etc
 
@@ -654,6 +705,8 @@ hpts_2 <- chull(xy_bd)
 hpts_2 <- c(hpts_2, hpts_2[1])
 xy_bd_chull <- xy_bd[hpts_2,] # hull edge points
 polygon(xy_bd_chull)
+polygon(LC6_RF_poly[[10]])
+polygon(LC6_RF_poly[[51]])
 lines(rbind(c(-11,180), c(-2,180)), lwd = 1)
 text(-5, 180, labels = expression(paste("9",degree)), pos = 1, offset = 0.3)
 lines(rbind(c(-11,180), c(-11,171)), lwd = 1)
@@ -665,7 +718,10 @@ text(90, -5, labels = expression(paste("side 90",degree)), pos = 1, offset = 0)
 lines(rbind(c(-12,90), c(162,90)), lwd = 1)
 text(-17, 90, labels = "equator", pos = 1, offset = 0, srt = 90)
 
-# -- 20 chosen
+dev.off()
+
+
+# - 20 chosen
 m <- 2 #5, 6
 df_plt <- df_cable_ax[((N_ind_sp+1)*(c(i1,i2,i3,i4)-1)+m),]
 df_plt <- cbind(df_plt, factor(c(rep(1,length(i1)),
@@ -797,6 +853,8 @@ ggplot(dfm, aes(factor(variable), value) ) +
 
 dev.off()
 
+wilcox.test(df[,3], alternative = 'two.sided')
+# wilcox.test(df[,5], alternative = 'greater')
 
 # LC6 glo median, etc --------------------------------------------------------------------------------------------------
 
@@ -989,7 +1047,7 @@ ggplot(dfm, aes(factor(variable), value) ) +
   stat_summary(fun.min = function(z) { quantile(z,0.25) },
                fun.max = function(z) { quantile(z,0.75) },
                geom = "linerange", position = position_nudge(x = 0.2, y = 0),
-               colour = 'black', size = 1, width = .2 ) +
+               colour = 'black', size = 1) +
   stat_summary(fun.min = median, geom = "errorbar",  colour = 'black', size = 1, width=.2,
                position = position_nudge(x = 0.2, y = 0) ) +
   coord_cartesian(ylim = c(-.5, 1)) +
@@ -999,7 +1057,12 @@ ggplot(dfm, aes(factor(variable), value) ) +
 dev.off()
 
 
-ks.test(df[,3], df[,2])
+# ks.test(df[,5], df[,3])
+
+# Mann-Whitney
+wilcox.test(df[,2], df[,4], alternative = 'two.sided')
+# wilcox.test(1 - df[,2] , alternative = 'greater')
+
 
 # Figure 6E, 2d LO, with projection onto 1D -----------------------------------------------------------------------
 
@@ -1671,6 +1734,10 @@ ggplot(dfm, aes(factor(variable), value) ) +
 
 dev.off()
 
+# Mann-Whitney
+wilcox.test(df[,4], df[,6], alternative = 'two.sided')
+wilcox.test(df[,6], alternative = 'two.sided')
+
 # LC6-LC6 syn-weighted distance -----------------------------------------------------------------------------------
 
 # - dist to a neuron avg over all partners weighted by num of conn
@@ -1824,7 +1891,6 @@ for (j in 1:(length(glo_div)-1)) {
     x0 <- (xy_com[[k]]["phi_deg"])
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- ID_wt[[j]][k,2]
-    # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
     grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
   }
   

@@ -138,7 +138,7 @@ df1 <- pt1 %>% cbind(.,seq(1,Nr*Nc)) %>% data.frame()
 colnames(df1) <- c('x','y', 'no')
 
 dev.new()
-# pdf(file = paste("block random, ", round(mean(RI(pt0, pt1)),2), " .pdf"), width = 2, height = 8,pointsize=12,family="Courier", useDingbats = F)
+# pdf(file = paste("block jitter, ", round(mean(RI(pt0, pt1)),2), " .pdf"), width = 8, height = 8,pointsize=12,family="Courier", useDingbats = F)
 ggplot() +
   geom_point(data = df1, aes(x,y, colour = factor(no)), size =10,  shape = 16) + 
   scale_color_manual(values = col_66) +
