@@ -46,7 +46,10 @@ valfit_sup <- valfit
 valfit_sup[ii] <- NA
 m_surf <-  matrix(valfit_sup, nrow = length(xx), ncol = length(yy)) # surface
 
-ii <- dist_min > 12e6 # for later analysis
+# ii <- dist_min > 12e6 # for later analysis
+# xyz_layer <- xyz_lm[!ii,] # pts
+
+ii <- dist_min > 5e6
 xyz_layer <- xyz_lm[!ii,] # pts
 
 # coarse version for plotting
@@ -755,7 +758,7 @@ dev.off()
 
 
 # Figure 5F, all 65
-m <- 2
+m <- 5
 df_plt <- df_cable_ax[((N_ind_sp+1)*(c(i1,i2,i3,i4,i5)-1)+m),]
 df_plt <- cbind(df_plt, factor(c(rep(1,length(i1)),
                                  rep(2,length(i2)),

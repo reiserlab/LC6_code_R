@@ -122,8 +122,8 @@ for (j in 1:length(conn_target_agglo_sum)) {
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- conn_target_agglo_sum[[j]][k,"tofrom_glo"]
     # if (A > 0) { # selected neuron
-      grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
-      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/3*2)^2 - (x[2]-y0)^2/(r_xy/3*2)^2))
+      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
+      grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/3*2)^2 - (x[2]-y0)^2/(r_xy/3*2)^2))
     # }
   }
   simdata[[j]] <- grid_Gaussian
@@ -146,9 +146,9 @@ for (j in 1:length(conn_target_agglo_sum)) {
     annotate("text", x = -5, y = 185, label = "9°") +
     geom_segment(aes(x = -11, y = 180, xend = -11, yend = 171), size=2, lineend = "round") +
     annotate("text", x = -15, y = 175.5, label = "9°") +
-    geom_segment(aes(x = 0, y = 3, xend = 0, yend = 177), size = 2) +
-    geom_segment(aes(x = 90, y = 3, xend = 90, yend = 177), size = 2) +
-    geom_segment(aes(x = -12, y = 90, xend = 162, yend = 90), size = 2) +
+    geom_segment(aes(x = 0, y = 3, xend = 0, yend = 177), size = 1) +
+    geom_segment(aes(x = 90, y = 3, xend = 90, yend = 177), size = 1) +
+    geom_segment(aes(x = -12, y = 90, xend = 162, yend = 90), size = 1) +
     scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
     scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
     labs(title = mat_names[j]) +

@@ -24,9 +24,11 @@ for (j in 1:64) {
   }
 }
 
-df <- as.data.frame(dd_pair)
-colnames(df) <- c('j','k', 'dd')
+dd_pair <- as.data.frame(dd_pair)
+colnames(dd_pair) <- c('j','k', 'dd')
+
 mat_names <- seq(1,65)
+df <- dd_pair
 
 dev.new()
 ggplot(df, aes(x = j, y = k)) + 
@@ -53,7 +55,7 @@ library(igraph)
 library(dendextend)
 
 
-df <- as.data.frame(dd_pair)
+df <- dd_pair
 colnames(df) <- c('from','to', 'weight')
 g <- graph.data.frame(df, directed = F)
 adjM <- igraph::get.adjacency(g, sparse = F, attr = 'weight')
@@ -107,9 +109,8 @@ polygon(xy_bd_chull)
 #  hierarchical clustering ----------------------------------------------------------------------------------------
 
 
-
 # - pre-syn dist
-df <- as.data.frame(dd_pair)
+df <- dd_pair
 colnames(df) <- c('from','to', 'weight')
 g <- graph.data.frame(df, directed = F)
 gc <- cluster_fast_greedy(g)
@@ -122,27 +123,35 @@ plot_dendrogram(gc)
 
 # - user hclust()
 
-# dist in LO
+# -- dist in LO
 d_LO <- dist(sph2cartZ(cbind(1,xy_com_m_tp)))
-hc <- hclust(d_LO, method = "ward.D2")
-# hc <- hclust(d_LO)
+hc_LO <- hclust(d_LO, method = "ward.D2")
+
 dev.new()
-plot(hc)
+plot(hc_LO)
 
 
-# make dist from pre-syn dist
-mat <- matrix(ncol = 65, nrow = 65)
-ii <- 1
-for (j in 1:64) {
-  for (k in (j+1):65) {
-    mat[k,j] <- dd_pair[ii,3]
-    ii <- ii + 1
-  }
-}
-mat <- as.dist(mat)
-hc2 <- hclust(mat, method = "ward.D2")
+# -- pre-syn dist
+# # make dist from pre-syn dist
+# mat <- matrix(ncol = 65, nrow = 65)
+# ii <- 1
+# for (j in 1:64) {
+#   for (k in (j+1):65) {
+#     mat[k,j] <- dd_pair[ii,3]
+#     ii <- ii + 1
+#   }
+# }
+# mat <- as.dist(mat)
+df <- dd_pair
+colnames(df) <- c('from','to', 'weight')
+g <- graph.data.frame(df, directed = F)
+adjM <- igraph::get.adjacency(g, sparse = F, attr = 'weight')
+mat <- as.dist(adjM)
+attributes(mat)$Labels <- NULL
+hc_glo <- hclust(mat, method = "ward.D2")
+
 dev.new()
-plot(hc2)
+plot(hc_glo)
 
 
 # - LC6 connections
@@ -163,25 +172,39 @@ colnames(LC6LC6) <- c('pre_ind','post_ind','pre_skid','post_skid','conn_id','pre
 rownames(LC6LC6) <- seq(1,dim(LC6LC6)[1])
 
 conn <- LC6LC6[, c(1,2)]
-conn_g <- graph.data.frame(conn, directed = T)
-adjM <- get.adjacency(conn_g, sparse = F)
+conn_g <- graph.data.frame(conn, directed = F)
+# conn_g2 <- graph_from_edgelist(as.matrix(conn), directed = T)
+# adjM <- get.adjacency(conn_g, sparse = F)
+adjM <- as_adjacency_matrix(conn_g, sparse = F)
+
+# conn_g3 <- graph_from_adjacency_matrix(adjM, weighted = T, mode = "plus")
+# adjM3 <- as_adjacency_matrix(conn_g3, sparse = F)
+
+# dev.new()
+# plot(conn_g3, edge.label=E(conn_g3)$weight, vertex.size =4)
+     # layout = layout_in_circle)
+
 mat3 <- as.dist(adjM)
 attributes(mat3)$Labels <- NULL
-mat3 <- 1/(mat3+1)
-hc3 <- hclust(mat3, method = "complete")
-hc4 <- hclust(mat3, method = "ward.D2")
-# hc4 <- hclust(mat3)
 
-# - cp 
+# mat3 <- 1/(mat3+1) # 1/(x+1)
 
+mat3 <- max(mat3) - mat3
 
-dend1 <- as.dendrogram(hc)
-dend2 <- as.dendrogram(hc2)
-dend3 <- as.dendrogram(hc3)
-dend4 <- as.dendrogram(hc4)
+  # hc_conn <- hclust(mat3, method = "complete")
+hc_conn <- hclust(mat3, method = "ward.D2")
 
 dev.new()
-dendlist(dend2, dend4) %>% 
+plot(hc_conn)
+
+# - cp 
+dend1 <- as.dendrogram(hc_LO)
+dend2 <- as.dendrogram(hc_glo)
+dend3 <- as.dendrogram(hc_conn)
+
+
+dev.new()
+dendlist(dend2, dend3) %>% 
   untangle(method = "step1side") %>% 
   tanglegram()
 
