@@ -66,7 +66,7 @@ ii <- dist_min > 20e6
 xy_layer_coarse <- xygridc[!ii,] # pts
 
 # make alpha mesh
-msh.a <- ashape3d(xyz_node, alpha = 20000) # 20000 look ok
+msh.a <- ashape3d(xyz_node, alpha = 20000) # 20000 looks ok
 msh <- as.mesh3d(msh.a)
 neu_lo <- nlapply(neu, subset, function(x) pointsinside(x, msh))
 
@@ -444,12 +444,12 @@ o_xyz_m_rs_sp <- xyzmatrix(nrefrs_sp$d)
 nref_y_sp <- LC6_sp_rs[[i_AP[2]]] # +y axis, NEW
 y_xyz_m_sp <- xyzmatrix(nref_y_sp$d)
 
-nopen3d()
-plot3d(nrefrs_sp)
-points3d(xyzmatrix(nrefrs_sp$d), size = 10)
-plot3d(LC6_sp_rs)
-shade3d(glo.msh, col='grey',alpha = 0.2)
-# identify3d(xyzmatrix(nrefrs_sp$d))
+# nopen3d()
+# plot3d(nrefrs_sp)
+# points3d(xyzmatrix(nrefrs_sp$d), size = 10)
+# plot3d(LC6_sp_rs)
+# shade3d(glo.msh, col='grey',alpha = 0.2)
+# # identify3d(xyzmatrix(nrefrs_sp$d))
 
 # 7, 99 (before split), 175(before glo), 246 (afte split)
 
