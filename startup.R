@@ -133,6 +133,27 @@ bubble_sort_swapCount <- function(x){
   return(N_swap)
 }
 
+# - RI, use Euclidean dist
+RI <- function(pt0, pt1){
+  pt0 <- as.matrix(pt0)
+  pt1 <- as.matrix(pt1)
+  
+  if (nrow(pt0) != nrow(pt1)) {
+    stop("pt num don't match")
+  }
+  
+  nr <- nrow(pt0)
+  swapMean <- (nr-1)*(nr-2)/4
+  
+  N_swap <- c()
+  for (j in 1:nr) {
+    o_pt0 <- sweep(pt0, 2, pt0[j,],'-')^2 %>% rowSums() %>% order()
+    N <- sweep(pt1, 2, pt1[j,],'-')^2 %>% rowSums() %>% .[o_pt0] %>% order() %>% bubble_sort_swapCount()
+    N_swap <- c(N_swap, N)
+  }
+  return(1 - N_swap/swapMean)
+}
+
 # - position after rotation:  pt1 <- pt0 %*% t(R_mat)
 quaternion3D <- function(vr, ang){
   ang <- ang / 180 * pi
@@ -175,26 +196,7 @@ sph2cartZ <- function(rtp){
   return(cbind(x,y,z))
 }
 
-# - RI, use Euclidean dist
-RI <- function(pt0, pt1){
-  pt0 <- as.matrix(pt0)
-  pt1 <- as.matrix(pt1)
-  
-  if (nrow(pt0) != nrow(pt1)) {
-    stop("pt num don't match")
-  }
-  
-  nr <- nrow(pt0)
-  swapMean <- (nr-1)*(nr-2)/4
-  
-  N_swap <- c()
-  for (j in 1:nr) {
-    o_pt0 <- sweep(pt0, 2, pt0[j,],'-')^2 %>% rowSums() %>% order()
-    N <- sweep(pt1, 2, pt1[j,],'-')^2 %>% rowSums() %>% .[o_pt0] %>% order() %>% bubble_sort_swapCount()
-    N_swap <- c(N_swap, N)
-  }
-  return(1 - N_swap/swapMean)
-}
+
 
 # # load neurons ----------------------------------------------------------------------------------------------------
 # 

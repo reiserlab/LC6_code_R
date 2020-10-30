@@ -664,7 +664,7 @@ for (j in c(10,51)) {
 }
 
 
-# - Figure 5E, chosen neurons i1, i2 etc
+# - Figure 5E, chosen neurons groups i1, i2 etc
 
 windows(record = F, width = 8, height = 8)
 
@@ -1063,8 +1063,8 @@ dev.off()
 # ks.test(df[,5], df[,3])
 
 # Mann-Whitney
-wilcox.test(df[,2], df[,4], alternative = 'two.sided')
-# wilcox.test(1 - df[,2] , alternative = 'greater')
+wilcox.test(df[,5], df[,4], alternative = 'two.sided')
+wilcox.test(1 - df[,2] , alternative = 'greater')
 
 
 # Figure 6E, 2d LO, with projection onto 1D -----------------------------------------------------------------------
@@ -1487,9 +1487,9 @@ plot3d(LC6_glo[[j]], col = 'red', lwd = 10, WithNodes = F, alpha =0.5)
 ii <- which.min(rowSums(sweep(as.matrix(conn_pre),2,bdot,'-')^2))
 segments3d(rbind(bdot, conn_pre[ii,]), lwd = 5, col = 'purple')
 
-# -- Figure 6H
+# -- Figure 
 
-# -- pre-synapse in glo
+# -- pre-synapse in glo6H
 LC6_pre_glo <- list() #pre-synapse xyz 
 LC6_post_glo <- list() #post-synapse xyz 
 for (j in 1:length(LC6)) {
@@ -1719,7 +1719,7 @@ df <- data.frame(cbind(seq(1,65), 1 - 2*N_swap_pre_ls[[4]][,1]/swapMax,
 colnames(df) <- c('neu', 'sec4', 'sec5','sec6', 'sec456', 'sec456 random')
 dfm <- melt(df, id = 'neu')
 
-# Figure 6H
+# Figure 6I
 dev.new()
 # pdf(file = "sector RI.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 
@@ -1738,7 +1738,7 @@ ggplot(dfm, aes(factor(variable), value) ) +
 dev.off()
 
 # Mann-Whitney
-wilcox.test(df[,4], df[,6], alternative = 'two.sided')
+wilcox.test(df[,4], df[,5], alternative = 'two.sided')
 wilcox.test(df[,6], alternative = 'two.sided')
 
 # LC6-LC6 syn-weighted distance -----------------------------------------------------------------------------------

@@ -1,3 +1,9 @@
+# Kendall tau distance, https://en.wikipedia.org/wiki/Kendall_tau_distance
+# No. swaps = No. inversion
+
+# Kendall rank corr coeff, https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient
+# ordinary generating func, https://math.stackexchange.com/questions/245018/bubble-sorting-question
+
 # on a grid ----------------------------------------------------------------------------------------------------
 
 Nr <- 11
@@ -268,8 +274,6 @@ dev.off()
 Np <- 64
 
 
-
-
 swap_stats <- matrix(ncol = 2, nrow = 65)
 # - variance in num of swaps
 for (j in 1:8) { #exact
@@ -313,3 +317,145 @@ y <- 1 - 2*x/smax
 
 dev.new()
 plot(x,y)
+
+
+
+# 1D and 2D RI range test ---------------------------------------------------------------------------------------------------------
+
+# original
+N <- 4
+pt <- cumsum(seq(0, by =0.003, length.out =N)) + seq(0,by=1, length.out=N) 
+# pt <- rev(pt)
+
+sum(duplicated(dist(pt)))
+N*(N-1)/2
+
+# all
+RI_pt <- c()
+RI_pt_avg <- c()
+newOrder <- gtools::permutations(N,N) #N <=8
+for (j in 1:nrow(newOrder)) {
+  ptn <- pt[newOrder[j,]]
+  RI_pt <- c(RI_pt, RI(pt, ptn))
+  RI_pt_avg <- c(RI_pt_avg, mean(RI(pt, ptn)) )
+}
+
+dev.new()
+hist(RI_pt,50)
+dev.new()
+hist(RI_pt_avg,50)
+
+# random sample
+RI_pt <- c()
+RI_pt_avg <- c()
+for (j in 1:500) {
+  ptn <- pt[sample(N)]
+  RI_pt <- c(RI_pt, RI(pt, ptn))
+  RI_pt_avg <- c(RI_pt_avg, mean(RI(pt, ptn)) )
+}
+
+
+# PLOT scatter
+df <- as.data.frame(RI_pt)
+df <- as.data.frame(RI_pt_avg)
+
+
+# - 2D
+
+# original
+Nr <- 4
+Nc <- 1
+N <- Nc*Nr
+y <- seq(-Nr/2+0.5, Nr/2-0.5, length.out = Nr)
+x <- seq(-Nc/2+0.5, Nc/2-0.5, length.out = Nc)
+pt0 <- expand.grid(x, y) + cbind(runif(Nr*Nc,min = -1,max = 1)*0.1, runif(Nr*Nc,min = -1,max = 1)*0.1)
+pt0 <- as.matrix(pt0)
+
+sum(duplicated(dist(pt0)))
+N*(N-1)/2
+
+pt1 <- pt0
+# for (j in 1:Nr) {
+#   pt1[seq(1,Nc)+(j-1)*Nc,1] <- pt1[seq(1,Nc)+(j-1)*Nc,1]*0.05*j
+# }
+
+# -- all
+RI_pt <- c()
+RI_pt_avg <- c()
+newOrder <- gtools::permutations(N,N) #N <=8
+for (j in 1:nrow(newOrder)) {
+  pt2 <- pt1[newOrder[j,],]
+  RI_pt <- c(RI_pt, RI(pt0, pt2))
+  RI_pt_avg <- c(RI_pt_avg, mean(RI(pt0, pt2)) )
+}
+
+# # -- random sample
+# RI_pt <- c()
+# RI_pt_avg <- c()
+# for (j in 1:1000) {
+#   pt2 <- pt1[sample(N),]
+#   RI_pt <- c(RI_pt, RI(pt0, pt2))
+#   RI_pt_avg <- c(RI_pt_avg, mean(RI(pt0, pt2)) )
+# }
+
+dev.new()
+hist(RI_pt,breaks = seq(-1,1,length.out = 51), main = paste(Nr,'x',Nc,sep=''))
+dev.new()
+hist(RI_pt_avg,breaks = seq(-1,1,length.out = 51),main = paste(Nr,'x',Nc,sep=''))
+
+
+# - 2D random stats
+
+# original
+Nr <- 6
+Nc <- 11
+N <- Nc*Nr
+
+pt0 <- cbind(runif(N,min = -1,max = 1), runif(N,min = -1,max = 1)) %>% as.matrix()
+sum(duplicated(dist(pt0)))
+# N*(N-1)/2
+# factorial(N-1)
+
+# -- random sample
+RI_pt <- c()
+RI_pt_avg <- c()
+for (j in 1:10000) {
+  pt1 <- cbind(runif(N,min = -1,max = 1), runif(N,min = -1,max = 1)) %>% as.matrix()
+  RI_pt <- c(RI_pt, RI(pt0, pt1))
+  RI_pt_avg <- c(RI_pt_avg, mean(RI(pt0, pt1)) )
+}
+
+dev.new()
+hist(RI_pt,breaks = seq(-.5,.5,length.out = 51), main = paste(Nr,'x',Nc,sep=''))
+dev.new()
+hist(RI_pt_avg,breaks = seq(-.1,.1,length.out = 51),main = paste(Nr,'x',Nc,sep=''))
+
+# distr
+sigma2 <- 2*(2*N+5)/(9*N*(N-1))
+x <- seq(-1,1,length.out = 200)
+y <- 1/sqrt(2*pi*sigma2)*exp(-x^2/2/sigma2)
+
+
+cc <- hist(RI_pt,breaks = seq(-1,1,length.out = 51), plot = F)
+dev.new()
+plot(x,y/max(y),type='l')
+points(cc$mids, cc$counts/max(cc$counts), cex = 1, pch = 16)
+
+
+# - check var ratio
+varm <- matrix(ncol = 4, nrow = 0)
+for (N in seq(10,100,by = 10)) {
+  pt0 <- cbind(runif(N,min = -1,max = 1)) %>% as.matrix()
+  RI_pt <- c()
+  RI_pt_avg <- c()
+  for (j in 1:500) {
+    pt1 <- cbind(runif(N,min = -1,max = 1)) %>% as.matrix()
+    RI_pt <- c(RI_pt, RI(pt0, pt1))
+    RI_pt_avg <- c(RI_pt_avg, mean(RI(pt0, pt1)) )
+  }
+  varm <- rbind(varm, c(N,var(RI_pt), var(RI_pt_avg), var(RI_pt)/var(RI_pt_avg)))
+  
+}
+
+
+
