@@ -1138,7 +1138,6 @@ neu_target_rs <- resample(neu_target, stepsize = 400)
 # identify3d(xyzmatrix(LC6[[i_AP[1]]]$d))
 
 dL <- 500 # half thickness of cross section
-# range_x <- c(356000, 440000)
 range_x <- c(358000, 438000)
 N_cs <- diff(range_x) / 2 / dL
 
@@ -1150,8 +1149,6 @@ dd_ls_tar <- list()
 ref_d <- c()
 
 for (j in 1:N_cs) {
-  
-  # ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
   ii <- o_xyz_m[,1] > (range_x[1] + (j-1)*2*dL) & o_xyz_m[,1] < (range_x[1] + (j)*2*dL)
   o_xyz <- colMeans(o_xyz_m[ii,])
   d1 <- (o_xyz + xp*dL) %*% xp #distance to plane
@@ -1166,7 +1163,6 @@ for (j in 1:N_cs) {
   }
   z_xyz[1] <- o_xyz[1] # use this plane as y-z
   zp <- z_xyz - o_xyz
-  # zp <- zp - c(zp %*% xp)*xp # +z
   
   ref_d <- c(ref_d, sqrt(sum(zp^2))) #unit length
   

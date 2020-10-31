@@ -46,9 +46,6 @@ valfit_sup <- valfit
 valfit_sup[ii] <- NA
 m_surf <-  matrix(valfit_sup, nrow = length(xx), ncol = length(yy)) # surface
 
-# ii <- dist_min > 12e6 # for later analysis
-# xyz_layer <- xyz_lm[!ii,] # pts
-
 ii <- dist_min > 5e6
 xyz_layer <- xyz_lm[!ii,] # pts
 
@@ -59,8 +56,6 @@ xxc <- seq(range(X)[1] - gridMargin, range(X)[2] + gridMargin, by = dx2c)
 yyc <- seq(range(Y)[1] - gridMargin, range(Y)[2] + gridMargin, by = dy2c)
 xygridc <- expand.grid(xxc, yyc)
 xygridc <- setNames(data.frame(xygridc), c('X', 'Y'));
-# valfitc <- predict(fitlm, xygridc) #generate values from the fit
-# xyz_lmc <- cbind(xygridc, valfitc)
 dist_min <- apply(xygridc, 1, function(pt) {min(rowSums(sweep(xyz_node[,c(1,2)], 2, pt) ^ 2))}) #calculate min distance
 ii <- dist_min > 20e6
 xy_layer_coarse <- xygridc[!ii,] # pts
@@ -153,14 +148,7 @@ for (j in 1:length(ind_pj)){
 # ahull
 xy_ashape_grid <- ashape(xyz_layer[,1:2] + matrix(runif(dim(xyz_layer)[1]*2, 1e-9, 2e-9), ncol = 2), alpha = 6000)
 
-
-# # use chull for the grid projection
-# xy_grid <- xy_ashape_grid$edges[,c("x1","y1")]
-# hpts <- chull(xy_grid)
-# hpts <- c(hpts, hpts[1])
-# xy_edge_grid <- xy_grid[hpts,] # hull edge points
-
-# ### ### use alpha-hull for the grid projection
+# use alpha-hull for the grid projection
 xy_grid_ahull <- mkpoly(xy_ashape_grid$edges)[[1]][,3:4]
 xy_edge_grid <- xy_grid_ahull # hull edge points
 
@@ -173,26 +161,6 @@ for (j in 1:length(ind_pj)) {
 
 
 # - use TM5 to determine the center and meridian  
-
-# too rough
-# TM5_lo <- nlapply(TM5, subset, function(x) pointsinside(x, msh))
-# TM5_u <- colMeans(xyzmatrix(TM5_lo[[1]]$d)) #upper pt
-# TM5_c <- colMeans(xyzmatrix(TM5_lo[[2]]$d)) #upper pt
-
-# tar <- TM5[[1]]
-# ng <- as.ngraph(tar)
-# distal_points <- igraph::graph.dfs(ng, root=1237, unreachable=FALSE, neimode='out')$order
-# proximal_points <- setdiff(igraph::V(ng), distal_points)
-# # points3d(xyzmatrix(tar$d[proximal_points,]), col = 'red', size = 5)
-# TM5_u <- colMeans(xyzmatrix(tar$d[proximal_points,])) #upper pt
-# 
-# tar <- TM5[[2]]
-# ng <- as.ngraph(tar)
-# distal_points <- igraph::graph.dfs(ng, root=30, unreachable=FALSE, neimode='out')$order
-# proximal_points <- setdiff(igraph::V(ng), distal_points)
-# TM5_c <- colMeans(xyzmatrix(tar$d[proximal_points,])) # central pt
-
-# for old neuron data
 tar <- TM5[[1]]
 ng <- as.ngraph(tar)
 distal_points <- igraph::graph.dfs(ng, root=2137, unreachable=FALSE, neimode='out')$order
@@ -486,9 +454,6 @@ for (j in 1:N_ind_sp) {
   d1 <- (o_xyz + xp*dL) %*% xp #distance to plane
   d2 <- (o_xyz - xp*dL) %*% xp #distance to plane
   
-  # z_ind <- which.min(rowSums(sweep(y_xyz_m_sp, MARGIN = 2, STATS = o_xyz, '-')^2))
-  # z_xyz <- y_xyz_m_sp[z_ind,] # +z
-  
   # use 2 planes
   y_ind_1 <- apply(y_xyz_m_sp, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
   y_ind_2 <- sqrt(rowSums(sweep(y_xyz_m_sp, MARGIN = 2, STATS = o_xyz, '-')^2)) < 20000
@@ -529,19 +494,6 @@ for (j in 1:N_ind_sp) {
   pt_yz[i_AP[1],] <- c(0,0)
   yz_ls[[j]] <- pt_yz
 }
-
-# DEBUG
-nopen3d()
-plot3d(nrefrs_sp, WithNodes = F)
-# points3d(xyzmatrix(nrefrs_sp$d[ref_ind_sp,]), col = 'red',size = 10)
-points3d(o_xyz_m_rs_sp, col = 'grey',size = 5)
-points3d(o_xyz_m_rs_sp[ref_ind_sp,], col = 'red',size = 10)
-arrow3d(o_xyz_m_rs_sp[ref_ind_sp[j],], o_xyz_m_rs_sp[ref_ind_sp[j],] + xp*1e3, theta = pi / 9, n = 8, col = "red", type = "rotation")
-points3d((y_xyz_m_sp[y_ind,]), size =5, col='blue')
-arrow3d(o_xyz, o_xyz + yp, theta = pi / 18, n = 8, col = "red", type = "rotation")
-planes3d(xp[1],xp[2],xp[3],-d1, alpha=0.3)
-planes3d(xp[1],xp[2],xp[3],-d2, alpha=0.3)
-points3d(xyz_m[xyz_m_ind,], size =10, col = 'cyan')
 
 
 # add eye
@@ -679,25 +631,16 @@ i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
 for (j in 1:length(xy_poly)) {
   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
   if (j %in% i1) {
-    # geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 18 )
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4_a1[1], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i1i, pos = 1, offset = 0.3)
-    # i1i <- i1i + 1
   }
   else if (j %in% i2) {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4_a1[2], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i2i, pos = 1, offset = 0.3)
-    # i2i <- i2i + 1
   }
   else if (j %in% i3) {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4_a1[3], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i3i, pos = 1, offset = 0.3)
-    # i3i <- i3i + 1
   }
   else if (j %in% i4) {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4_a1[4], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i4i, pos = 1, offset = 0.3)
-    # i4i <- i4i + 1
   }
   else {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col="grey", cex = 2, pch = 16) 
@@ -739,15 +682,10 @@ gpl <- ggplot() +
                       labels = c("top", "back", "bottom","front") ) +
   guides(colour = guide_legend("groups") )+
   scale_y_reverse() +
-  # xlim(xrange) +
-  # ylim(yrange) +
   coord_fixed(ratio = 1) +
-  # theme_minimal() +
   theme_void() +
   geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
   annotate("text", x = 0.05, y = -0.8, label = '1 um') +
-  # annotate("text", x = -.5, y = -2.8, label = paste('retino-index = ', mean(rt_ind[,m]))) +
-  # labs(title = paste('retino-index = ', round(mean(rt_ind[,m]),digits = 2)))
   labs(title = m-1)
 
 windows(record = F, width = 8, height = 8)
@@ -768,7 +706,6 @@ df_plt <- cbind(df_plt, factor(c(rep(1,length(i1)),
                                                         rep(1, 45)) )
 colnames(df_plt)[4] <- 'colcol'
 colnames(df_plt)[5] <- 'dotsize'
-# legend_size <- c(3, 4, 5, 6, 7)
 gpl <- ggplot(data = df_plt, aes(x=y, y=z)) +
   geom_point(aes(colour = colcol, size = dotsize), shape = 20 ) +
   scale_colour_manual(values = c(col4, 'grey'),
@@ -777,15 +714,10 @@ gpl <- ggplot(data = df_plt, aes(x=y, y=z)) +
   guides(colour = guide_legend("groups") )+
   scale_y_reverse() +
   scale_size(range = c(6,10)) +
-  # geom_text(hjust=0, vjust=0, label=c(i1,i2,i3,i4,i5) ) +
   coord_fixed(ratio = 1) +
-  # theme_minimal() +
   theme_void() +
   geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
   annotate("text", x = 0.05, y = -0.8, label = '1 um') +
-  #guides(color= guide_legend(), size = guide_legend(override.aes = list(size = legend_size)) ) +
-  # annotate("text", x = -.5, y = -2.8, label = paste('retino-index = ', mean(rt_ind[,m]))) +
-  # labs(title = paste('retino-index = ', round(mean(rt_ind[,m]),digits = 2)))
   labs(title = m-1)
 
 windows(record = F, width = 8, height = 8)
@@ -794,7 +726,7 @@ gpl
 
 dev.off()
 
-# Figure 5H, ordering 65 axon ------------------------------------------------------------------------------------
+# Figure 5I, ordering 65 axon ------------------------------------------------------------------------------------
 
 yz_cs_glo <- list()
 for (j in 2:5) {
@@ -845,19 +777,18 @@ dev.new()
 ggplot(dfm, aes(factor(variable), value) ) + 
   geom_jitter(aes(colour=neu),size = 4,height = 0, width = 0.1) +
   scale_colour_manual(values = col_4_65, guide=FALSE) +
-  stat_summary(fun.min = function(z) { quantile(z,0.25) },
-               fun.max = function(z) { quantile(z,0.75) },
+  stat_summary(fun.data = mean_se,
                geom = "errorbar", position = position_nudge(x = 0.2, y = 0),
                colour = 'black', size = 1, width = .2 ) +
-  stat_summary(fun = median, geom = "point",  colour = 'black', size = 5, position = position_nudge(x = 0.2, y = 0)) +
+  stat_summary(fun = mean, geom = "point",  colour = 'black', size = 5, position = position_nudge(x = 0.2, y = 0)) +
   coord_cartesian(ylim = c(-0.5, 1)) +
   theme_minimal_grid() +
   labs(title = "11 cross sections", x='position', y='RI') 
 
+
 dev.off()
 
-wilcox.test(df[,3], alternative = 'two.sided')
-# wilcox.test(df[,5], alternative = 'greater')
+# wilcox.test(df[,3], alternative = 'two.sided')
 
 # LC6 glo median, etc --------------------------------------------------------------------------------------------------
 
@@ -887,52 +818,10 @@ for (j in 1:65) {
 }
 
 
-# # - PLOT, order by median x in LO, 65 color
-# getPalette <- colorRampPalette(brewer.pal(9, "Blues"))
-# synpc_order_pal <-  getPalette(65)
-# cable_glo_x_o <- order(cable_glo_med_x)
-# # cable_glo_x_o <- order(cable_glo_mean_x)
-# # cable_glo_x_o <- order(cable_glo_mid_x)
-# # cable_glo_x_o <- order(cable_glo_min10_x)
-# 
-# windows(record = F, width = 8, height = 8)
-# bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
-# bd_theta <- seq(1, 180, by = 1)
-# xy_bd <- matrix(ncol = 2)
-# bd_grid <- expand.grid(bd_phi, bd_theta)
-# plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F)
-# for (j in 1:length(xy_poly)) {
-#   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
-#   # points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=synpc_order_pal[cable_glo_x_o[j]], cex = 1.5, pch = 20)
-#   points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=synpc_order_pal[match(j,cable_glo_x_o)], cex = 1.5, pch = 20)
-#   # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = cable_glo_x_o[j], pos = 1, offset = 0.3)
-# }
-# xy_bd <- xy_bd[-1,]
-# hpts_2 <- chull(xy_bd)
-# hpts_2 <- c(hpts_2, hpts_2[1])
-# xy_bd_chull <- xy_bd[hpts_2,] # hull edge points
-# polygon(xy_bd_chull)
-# lines(rbind(c(-11,180), c(-2,180)), lwd = 1)
-# text(-5, 180, labels = expression(paste("9",degree)), pos = 1, offset = 0.3)
-# lines(rbind(c(-11,180), c(-11,171)), lwd = 1)
-# text(-11, 175, labels = expression(paste("9",degree)), pos = 2, offset = 0.2)
-# lines(rbind(c(0,0), c(0,180)), lwd = 1) 
-# text(0, -5, labels = "front", pos = 1, offset = 0)
-# lines(rbind(c(90,0), c(90,180)), lwd = 1)
-# text(90, -5, labels = expression(paste("side 90",degree)), pos = 1, offset = 0)
-# lines(rbind(c(-12,90), c(162,90)), lwd = 1)
-# text(-17, 90, labels = "equator", pos = 1, offset = 0, srt = 90)
-# title('x median')
-
-
-# - Figure 6A, order by median x in LO, 3 colors
-# synpc_order_pal_3 <- brewer.pal(3, "Blues")
+# - Figure 6D, order by median x in LO, 3 colors
 synpc_order_pal_3 <- c(brewer.pal(5, "RdBu")[c(1,2)], "grey40")
 
-# cable_glo_x_o <- order(cable_glo_avg)
-# cable_glo_x_o <- order(cable_glo_min10_x)
 cable_glo_x_o <- order(cable_glo_med_x)
-# cable_glo_x_o <- order(cable_glo_min10_x)
 
 cable_glo_x_o <- data.frame(order = cable_glo_x_o)
 cable_glo_x_o$gp <- 0
@@ -953,7 +842,6 @@ plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F
 for (j in 1:length(xy_poly)) {
   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
   points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=synpc_order_pal_3[cable_glo_x_o[j,'gp']], cex = 3, pch = 16)
-  # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = cable_glo_x_o[j], pos = 1, offset = 0.3)
 }
 xy_bd <- xy_bd[-1,]
 hpts_2 <- chull(xy_bd)
@@ -976,17 +864,14 @@ title('x median')
 
 dev.off()
 
-# - Figure 6B
+# - Figure 6C
 
 # 3 color glo, median
 nopen3d()
 par3d('windowRect' = c(100,100,3100,1100))
 rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0)
               , zoom = 0.3)
-# points3d(cable_glo_avg, col = synpc_order_pal_3[cable_glo_x_o[,'gp']], size = 30)
 points3d(cable_glo_med, col = synpc_order_pal_3[cable_glo_x_o[,'gp']], size = 30)
-# points3d(cable_glo_min1, col = synpc_order_pal_3[cable_glo_x_o[,'gp']], size = 10)
-# shade3d(glo.msh, alpha = 0.1)
 shade3d(glo.msh, col='cyan',alpha = 0.05)
 
 rgl.pop(type = "light")
@@ -1004,10 +889,9 @@ shade3d(glo.msh, col='cyan',alpha = 0.05)
 title3d('cable min 10')
 
 
-# Figure 6D, index for LC6 median ----------------------------------------------------------------------------------------------------
+# Figure 6B, index for LC6 median ----------------------------------------------------------------------------------------------------
 
 # -- mean and x-median syn position
-# syn_xyz_avg <- matrix(ncol = 3, nrow = length(LC6))
 syn_xyz_med_x <- matrix(ncol = 1, nrow = length(LC6))
 for (j in 1:length(LC6)) {
   conn <- connectors(LC6[[j]])
@@ -1029,30 +913,24 @@ xy_com_m_rot_90[,1] <- if_else(xy_com_m_rot_90[,1] > pi, xy_com_m_rot_90[,1] - 2
 # -- make df of indices
 df <- cbind(seq(1,65),
             RI(sph2cartZ(cbind(1,xy_com_m_tp)), cable_glo_med_x),
-            RI(sph2cartZ(cbind(1,xy_com_m_tp)), syn_xyz_med_x),
-            RI(sph2cartZ(cbind(1,xy_com_m_tp)), xy_com_m[,1]),
-            RI(sph2cartZ(cbind(1,xy_com_m_tp)), xy_com_m_rot_90[,1])
+            RI(sph2cartZ(cbind(1,xy_com_m_tp)), syn_xyz_med_x)
             )
 
 df <- data.frame(df) 
-colnames(df) <- c('neu', 'skeleton median', 'syn median', 'AP', 'DV')
+colnames(df) <- c('neu', 'skeleton median', 'syn median')
 dfm <- melt(df, id = 'neu')
+ind_med_mean <- mean(df$`skeleton median`)
 
 dev.new()
-# pdf(file = "4 scatters.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+# pdf(file = "2 scatters.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 
 ggplot(dfm, aes(factor(variable), value) ) + 
-  # geom_boxplot() +
-  # geom_point() +
   geom_jitter(aes(colour=variable), size = 4, height = 0, width = 0.1, alpha = 0.5) +
-  # scale_colour_manual(values = c(synpc_order_pal_3[1], "forestgreen", rep('black',3)), guide=FALSE) +
   scale_colour_manual(values = c("#af8dc3", "forestgreen", rep('black',3)), guide=FALSE) +
-  stat_summary(fun.min = function(z) { quantile(z,0.25) },
-               fun.max = function(z) { quantile(z,0.75) },
-               geom = "linerange", position = position_nudge(x = 0.2, y = 0),
-               colour = 'black', size = 1) +
-  stat_summary(fun.min = median, geom = "errorbar",  colour = 'black', size = 1, width=.2,
-               position = position_nudge(x = 0.2, y = 0) ) +
+  stat_summary(fun.data = mean_se,
+               geom = "errorbar", position = position_nudge(x = 0.2, y = 0),
+               colour = 'black', size = 1, width = .2 ) +
+  stat_summary(fun = mean, geom = "point",  colour = 'black', size = 5, position = position_nudge(x = 0.2, y = 0)) +
   coord_cartesian(ylim = c(-.5, 1)) +
   theme_minimal_grid() +
   labs(title = "4 mapping", x='quantity', y='RI') 
@@ -1063,8 +941,8 @@ dev.off()
 # ks.test(df[,5], df[,3])
 
 # Mann-Whitney
-wilcox.test(df[,5], df[,4], alternative = 'two.sided')
-wilcox.test(1 - df[,2] , alternative = 'greater')
+# wilcox.test(df[,5], df[,4], alternative = 'two.sided')
+# wilcox.test(1 - df[,2] , alternative = 'greater')
 
 
 # Figure 6E, 2d LO, with projection onto 1D -----------------------------------------------------------------------
@@ -1077,7 +955,6 @@ bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
 bd_theta <- seq(1, 180, by = 1)
 xy_bd <- matrix(ncol = 2)
 bd_grid <- expand.grid(bd_phi, bd_theta)
-# range(bd_grid$Var1)
 plot(bd_grid, xlim = c(-20,215), ylim = c(190,-50), type = "n", axes = FALSE, ann = F)
 i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
 for (j in 1:length(xy_poly)) {
@@ -1104,16 +981,6 @@ hpts_2 <- chull(xy_bd)
 hpts_2 <- c(hpts_2, hpts_2[1])
 xy_bd_chull <- xy_bd[hpts_2,] # hull edge points
 polygon(xy_bd_chull)
-# lines(rbind(c(-11,180), c(-2,180)), lwd = 1)
-# text(-5, 180, labels = expression(paste("9",degree)), pos = 1, offset = 0.3)
-# lines(rbind(c(-11,180), c(-11,171)), lwd = 1)
-# text(-11, 175, labels = expression(paste("9",degree)), pos = 2, offset = 0.2)
-# lines(rbind(c(0,0), c(0,180)), lwd = 1) 
-# text(0, -5, labels = "front", pos = 1, offset = 0)
-# lines(rbind(c(90,0), c(90,180)), lwd = 1)
-# text(90, -5, labels = expression(paste("side 90",degree)), pos = 1, offset = 0)
-# lines(rbind(c(-12,90), c(162,90)), lwd = 1)
-# text(-17, 90, labels = "equator", pos = 1, offset = 0, srt = 90)
 
 # add projection on x and y
 lines(rbind(c(-10,190), c(160,190)), lwd = 1)
@@ -1172,21 +1039,7 @@ for (j in 1:36) {
   xy_com_m_rot <- xy_com_m_rot/pi*180
   
   # normalize
-  # com_rot_norm <- xy_com_m_rot[,1] / 360
   x_com_m_rot_norm <- (xy_com_m_rot[,1] - min(xy_com_m_rot[,1])) / diff(range(xy_com_m_rot[,1]))
-  
-  
-  # dev.new()
-  # plot(xy_com_m_rot)
-  # points(xy_com_m_rot[c(1,2),], cex = 2, col ='red', pch = 16)
-  # points(xy_com_m_rot[c(3,4),], cex = 2, col ='blue', pch = 16)
-  
-  # df <- cbind.data.frame(xy_com_m_rot[,1], cable_glo_med_x)
-  
-  # normalize to [0, 1]
-  # cable_glo_min10_x_norm <- cable_glo_min10_x - min(cable_glo_min10_x)
-  # cable_glo_min10_x_norm <- cable_glo_min10_x_norm / max(cable_glo_min10_x_norm)
-  
   
   df <- cbind.data.frame(x_com_m_rot_norm, cable_glo_med_x_norm)
   colnames(df) <- c('x','y')
@@ -1212,33 +1065,12 @@ axis(2, at = seq(-0.5, 0.5, by = 0.5), labels = seq(-0.5, 0.5, by = 0.5), las=2)
 
 dev.off()
 
-# best choice
-j <- 3
-
-# ang <- j*10
-# R_mat <- quaternion3D(vr, ang)
-# 
-# xy_com_m_rot <- sph2cartZ(cbind(1, xy_com_m_tp)) %*% t(R_mat) #ccw on S2
-# xy_com_m_rot <- cart2sphZ(xy_com_m_rot)[, c(3,2)]
-# xy_com_m_rot[,1] <- if_else(xy_com_m_rot[,1] > pi, xy_com_m_rot[,1] - 2*pi, xy_com_m_rot[,1])
-# xy_com_m_rot <- xy_com_m_rot/pi*180
-# 
-# # ang <- j*10/180*pi
-# # M_rot <- matrix(c(cos(ang), sin(ang), -sin(ang), cos(ang)), ncol = 2, byrow = T)
-# # 
-# # xy_com_m_rot <- xy_com_m %*% M_rot
-# 
-# # normalize
-# com_rot_norm <- xy_com_m_rot[,1] / 360
-# cable_glo_med_x_norm <- (cable_glo_med_x - glo_div[1])/ diff(range(glo_div)) 
+# # best choice
+# j <- 3
 
 # -- Figure 6F, RI for all rot ang
 N_swap_rot <- matrix(ncol = 18, nrow = 65)
 for (k in 1:18) {
-  # ang <- (k-1)*10/180*pi
-  # M_rot <- matrix(c(cos(ang), sin(ang), -sin(ang), cos(ang)), ncol = 2, byrow = T)
-  # xy_com_m_rot <- xy_com_m %*% M_rot
-  
   ang <- (k-1)*10
   R_mat <- quaternion3D(vr, ang)
 
@@ -1269,25 +1101,21 @@ colnames(df) <- c('neu', seq(0,180,by = 10))
 dfm <- melt(df, id = 'neu')
 
 dev.new()
-# pdf(file = "index rotation.pdf", width = 10, height = 4,pointsize=12,family="Helvetica", useDingbats = F)
+# pdf(file = "lo to 1D.pdf", width = 10, height = 4,pointsize=12,family="Helvetica", useDingbats = F)
 
 ggplot(dfm, aes(factor(variable), value) ) + 
-  # geom_boxplot() +
-  # geom_point() +
-  # geom_jitter(colour = 'black', size = 4, height = 0, width = 0.1) +
-  stat_summary(fun.min = function(z) { quantile(z,0.25) },
-               fun.max = function(z) { quantile(z,0.75) },
-               geom = "linerange", position = position_nudge(x = 0, y = 0),
-               colour = 'black', size = 1) +
-  stat_summary(fun.min = median, geom = "errorbar",  colour = 'black', size = 1, width=.2,
-               position = position_nudge(x = 0.2, y = 0) ) +
+  stat_summary(fun.data = mean_se,
+               geom = "errorbar", position = position_nudge(x = 0, y = 0),
+               colour = 'black', size = 1, width = .2 ) +
+  stat_summary(fun = mean, geom = "point",  colour = 'black', size = 1, position = position_nudge(x = 0, y = 0)) +
   coord_cartesian(ylim = c(-.5, 1)) +
   theme_minimal_grid() +
-  labs(title = "index rotation LO", x='Angle', y='RI') 
+  geom_segment(aes(x = 0, y = ind_med_mean, xend = 20, yend = ind_med_mean), size = 2, lineend = "round") +
+  labs(title = "lo to 1d", x='Angle', y='RI') 
 
 dev.off()
 
-# -- Figure 6F, 1D vs glo median
+# -- Figure 6G, 1D vs glo median
 N_swap_1D_rot <- matrix(ncol = 18, nrow = 65)
 for (k in 1:18) {
   ang <- (k-1)*10
@@ -1323,98 +1151,15 @@ dev.new()
 # pdf(file = "index rotation 1D vs glo med.pdf", width = 10, height = 4,pointsize=12,family="Helvetica", useDingbats = F)
 
 ggplot(dfm, aes(factor(variable), value) ) + 
-  # geom_boxplot() +
-  # geom_point() +
-  # geom_jitter(colour = 'black', size = 4, height = 0, width = 0.1) +
-  stat_summary(fun.min = function(z) { quantile(z,0.25) },
-               fun.max = function(z) { quantile(z,0.75) },
+  stat_summary(fun.data = mean_se,
                geom = "errorbar", position = position_nudge(x = 0, y = 0),
                colour = 'black', size = 1, width = .2 ) +
-  stat_summary(fun = median, geom = "point",  colour = 'black', size = 5,position = position_nudge(x = 0, y = 0) ) +
+  stat_summary(fun = mean, geom = "point",  colour = 'black', size = 1, position = position_nudge(x = 0, y = 0)) +
   coord_cartesian(ylim = c(-.5, 1)) +
   theme_minimal_grid() +
   labs(title = "index 1D vs glo median sweep", x='Angle', y='RI') 
 
 dev.off()
-
-
-# plot 2d
-# dev.new()
-# plot(xy_com_m_rot)
-# points(xy_com_m_rot[c(1,2),], cex = 2, col ='red', pch = 16)
-# points(xy_com_m_rot[c(3,4),], cex = 2, col ='blue', pch = 16)
-
-# # PLOT 3d eg. neuron
-# which.min(cable_glo_min10_x_norm)
-
-# # -- example neuron
-# nopen3d()
-# par3d('windowRect' = c(100,100,1100,1100))
-# j <- 48
-# plot3d(LC6_glo_rs[[j]], col = col4[4], lwd = 3, WithNodes = F)
-# xyz <- xyzmatrix(LC6_glo_rs[[j]]$d)
-# xyz10 <- xyz[xyz[,1] < quantile(xyz[,1], 0.1),]
-# points3d(matrix(colMeans(xyz10),ncol=3), size = 30, col = "pink")
-# j <- 3
-# plot3d(LC6_glo_rs[[j]], col = col4[3], lwd = 3, WithNodes = F)
-# xyz <- xyzmatrix(LC6_glo_rs[[j]]$d)
-# xyz10 <- xyz[xyz[,1] < quantile(xyz[,1], 0.1),]
-# points3d(matrix(colMeans(xyz10),ncol=3), size = 30, col = "cyan")
-# 
-# rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0))
-# rgl.pop(type = "light")
-# rgl.light(theta = 30, phi = 30)
-# 
-# shade3d(glo.msh, alpha = 0.1)
-# title3d('min 10 eg')
-
-
-# # -- plot regression
-# dev.new()
-# # par(mfrow=c(4,2))
-# 
-# # pdf(file = "median reg 2.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-# 
-# df <- cbind.data.frame(com_rot_norm, cable_glo_med_x_norm)
-# colnames(df) <- c('x','y')
-# linReg <- lm(y ~ x, data = df)
-# df$fitted <- linReg$fitted.values
-# pval <- summary(linReg)$coefficients['x', 'Pr(>|t|)'] #p-value
-# rsq <- summary(linReg)$r.squared # R^2
-# plot(df[,1:2], pch=16, cex=2, col='black', xaxt='none', yaxt='n',
-#      # xlim = c(0,.6), ylim = c(0.3,0.8), 
-#      xlim = c(-0.5,0.5), ylim = c(0.3,0.8), 
-#      # xlim = c(-1,1), ylim = c(0,1), 
-#      cex.axis=2, cex.lab=2, cex.main=2, 
-#      main = "lin reg", xlab = "position in LO", ylab = "position in glo")
-# # axis(1, at = seq(0, 1, by = 0.5), labels = seq(0, 1, by = 0.5), las=1) 
-# # axis(2, at = seq(0, 1, by = 0.5), labels = seq(0, 1, by = 0.5), las=2) 
-# # plot(df[,1:2], pch=16, cex=2, col=4,
-# #      xlim = c(20,250), ylim = c(320000,430000), main = j,
-# #      cex.axis=2, cex.lab=2, cex.main=2, xaxt='n',yaxt='n', ann=F)
-# lines(df[,c(1,3)], lwd=2, col='black')
-# text(0, 0.8, labels = bquote(paste("slope = ", .(signif(linReg$coefficients[2],2)))),
-#      adj = 0, srt = 0, cex = 1)
-# # text(100, 420000, labels = bquote(paste("p-value = ", .(signif(pval,2)))),
-# #      adj = 0, srt = 0, cex = 1)
-# # text(100, 420000, labels = bquote(paste("p-value = ", .(signif(pval,2)))),
-# #      adj = 0, srt = 0, cex = 1)
-# 
-# dev.off()
-# 
-# df <- cbind.data.frame(xy_com_m_rot[,1], cable_glo_min10_x)
-# colnames(df) <- c('x','y')
-# linReg <- lm(y ~ x, data = df)
-# df$fitted <- linReg$fitted.values
-# pval <- summary(linReg)$coefficients['x', 'Pr(>|t|)'] #p-value
-# rsq <- summary(linReg)$r.squared # R^2
-# points(df[,1:2], pch=16, cex=2, col=5,
-#        xlim = c(20,250), ylim = c(320000,430000), main = j,
-#        cex.axis=2, cex.lab=2, cex.main=2,xaxt='n',yaxt='n', ann=F)
-# lines(df[,c(1,3)], lwd=2, col='black')
-# text(100, 350000, labels = bquote(paste("p-value = ", .(signif(pval,2)))),
-#      adj = 0, srt = 0, cex = 1)
-# title('median and min 10 reg')
 
 
 # index of 3 glo sectors--------------------------------------------------------------
@@ -1426,7 +1171,7 @@ X <- diag(c(1, sat, 1)) %*% rgb2hsv(col2rgb(dolphin_col[4:6]))
 X[2,] <- 1
 dolphin_col_456 <- hsv(X[1,], X[2,], X[3,])
 
-# Figure 6G, 3 sectors
+# Figure 6H, 3 sectors
 nopen3d()
 par3d('windowRect' = c(100,100,1600,1600))
 rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0)
@@ -1439,15 +1184,14 @@ ii <- LC6_pre_glo_all[,1] > glo_div[5] & LC6_pre_glo_all[,1] < glo_div[6]
 points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[2], size = 10)
 ii <- LC6_pre_glo_all[,1] > glo_div[6] & LC6_pre_glo_all[,1] < glo_div[7]
 points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[3], size = 10)
-# ii <- LC6_pre_glo_all[,1] > glo_div[7] & LC6_pre_glo_all[,1] < glo_div[8]
-# points3d(LC6_pre_glo_all[ii,], col ='brown')
+
 
 shade3d(glo.msh, alpha = 0.1,lit = F)
 title3d('sectors in synapo glo')
-rgl.snapshot(filename = "sector.png",fmt = "png")
+# rgl.snapshot(filename = "sector.png",fmt = "png")
 
 
-# Figure 6G, eg neuron
+# Figure 6H, eg neuron
 # sec 4 mesh
 ii <- conn_LC6_gloHull[,1] > glo_div[4] & conn_LC6_gloHull[,1] < glo_div[5]
 glo4.as <- ashape3d(as.matrix(conn_LC6_gloHull[ii,]), alpha = 10000)
@@ -1458,10 +1202,6 @@ nopen3d()
 par3d('windowRect' = c(100,100,2100,1100))
 rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0)
               , zoom = 0.3)
-
-# shade3d(glo4.msh, alpha = 0.1, col = dolphin_col_456[1], lit = F)
-# planes3d(1,0,0, -glo_div[4], col = dolphin_col_456[1], lit=F)
-# planes3d(1,0,0, -glo_div[5], col = dolphin_col_456[1], lit=F)
 
 j <- 5
 conn <- connectors(LC6[[j]])
@@ -1487,23 +1227,17 @@ plot3d(LC6_glo[[j]], col = 'red', lwd = 10, WithNodes = F, alpha =0.5)
 ii <- which.min(rowSums(sweep(as.matrix(conn_pre),2,bdot,'-')^2))
 segments3d(rbind(bdot, conn_pre[ii,]), lwd = 5, col = 'purple')
 
-# -- Figure 
 
-# -- pre-synapse in glo6H
+
+# -- pre-synapse in glo
 LC6_pre_glo <- list() #pre-synapse xyz 
 LC6_post_glo <- list() #post-synapse xyz 
 for (j in 1:length(LC6)) {
   conn <- connectors(LC6[[j]])
   conn_pre <- conn[conn$prepost== 0, c('x','y','z')]
-  # inglo <- rowSums(sweep(conn_pre,2,c(a,b,c), '*')) + d < 0
   inglo <- pointsinside(conn_pre, glo.msh)
   LC6_pre_glo[[j]] <- conn_pre[inglo,]
-  
-  # ii_pre <-  tar$d$PointNo %in% conn[conn$prepost==0,]$treenode_id
-  # conn_pre <- xyzmatrix(tar$d[ii_pre,])
-  
   conn_post <- conn[conn$prepost== 1, c('x','y','z')]
-  # inglo <- rowSums(sweep(conn_post,2,c(a,b,c), '*')) + d < 0
   inglo <- pointsinside(conn_pre, glo.msh)
   LC6_post_glo[[j]] <- conn_post[inglo,]
 }
@@ -1521,113 +1255,10 @@ for (j in 1:65) {
 
 colSums(N_pre_comp == 0)
 
-# -- order by dist betw pre-syn
-# # 4, 5, 6, 8 and combined
-# N_swap_pre_ls <- list()
-# N_swap_pre_3_ls <- list()
-# 
-# for (s in c(4,5,6,8)) {
-#   LC6_pre_glo_comp <- list() # selected compartment
-#   jxyz_3 <- list()
-#   for (j in 1:65) {
-#     xx <- LC6_pre_glo[[j]][,1]
-#     ii <- xx > glo_div[s] & xx < glo_div[s+1] # USE old
-#     LC6_pre_glo_comp[[j]] <- LC6_pre_glo[[j]][ii,]
-#     # i3 <- xx > glo_div[s-1] & xx < glo_div[s+1+1]
-#     # jxyz_3[[j]] <- LC6_pre_glo[[j]][ii,] #check nb compartment
-#   }
-#   
-#   N_swap_pre <- matrix(ncol = 2, nrow = 65)
-#   for (j in 1:65) {
-#     # oj <- order(rowSums(sweep(xy_com_m, 2, xy_com_m[j,], '-')^2), decreasing = F) 
-#     oj <- order(apply(xy_com_m_tp, 1, function(x) arcLength(x, xy_com_m_tp[j,])), decreasing = F)
-#     jxyz <- LC6_pre_glo_comp[[j]] 
-#     jswap <- c()
-#     for (k in 1:nrow(jxyz)) {
-#       dd <- c() #distance
-#       for (m in 1:65) {
-#         # mdd <- min(rowSums(sweep(jxyz_3[[m]], 2, as.numeric(jxyz[k,]), '-')^2)) #shortes to a neuron
-#         mdd <- min(rowSums(sweep(LC6_pre_glo_comp[[m]], 2, as.numeric(jxyz[k,]), '-')^2)) #shortes to a neuron
-#         dd <- c(dd, mdd)
-#       }
-#       
-#       order_k <- order(dd[oj])  # re-order
-#       # order_k <- order(dd[sample(65)])  # random
-#       
-#       jswap <- c(jswap, bubble_sort_swapCount(order_k)) #num of swaps
-#     }
-#     N_swap_pre[j,] <- c(mean(jswap), sd(jswap))
-#   }
-#   
-#   
-#   N_swap_pre_ls[[s]] <- N_swap_pre  
-#   # N_swap_pre_3_ls[[s]] <- N_swap_pre
-# }
-# 
-# # combine 4,5,6
-# LC6_pre_glo_comp <- list() # selected compartment
-# for (j in 1:65) {
-#   xx <- LC6_pre_glo[[j]][,1]
-#   ii <- xx > glo_div[4] & xx < glo_div[7]
-#   LC6_pre_glo_comp[[j]] <- LC6_pre_glo[[j]][ii,]
-# }
-# N_swap_pre_456 <- matrix(ncol = 2, nrow = 65)
-# N_swap_pre_ran <- matrix(ncol = 2, nrow = 65)
-# for (j in 1:65) {
-#   oj <- order(apply(xy_com_m_tp, 1, function(x) arcLength(x, xy_com_m_tp[j,])), decreasing = F)
-#   jxyz <- LC6_pre_glo_comp[[j]] 
-#   jswap <- c()
-#   jswap_ran <- c()
-#   for (k in 1:nrow(jxyz)) {
-#     dd <- c() #distance
-#     for (m in 1:65) {
-#       mdd <- min(rowSums(sweep(LC6_pre_glo_comp[[m]], 2, as.numeric(jxyz[k,]), '-')^2)) #shortes to a neuron
-#       dd <- c(dd, mdd)
-#     }
-#     
-#     order_k <- order(dd[oj])  # re-order
-#     jswap <- c(jswap, bubble_sort_swapCount(order_k)) #num of swaps
-#     
-#     order_k_ran <- order(dd[sample(65)])  # random
-#     jswap_ran <- c(jswap_ran, bubble_sort_swapCount(order_k_ran)) #num of swaps
-#     
-#   }
-#   N_swap_pre_456[j,] <- c(mean(jswap), sd(jswap))
-#   N_swap_pre_ran[j,] <- c(mean(jswap_ran), sd(jswap_ran))
-# }
-# 
-# 
-# # - sectors
-# swapMax <- 64*(64-1)/2
-# df <- data.frame(cbind(seq(1,65), 1 - 2*N_swap_pre_ls[[4]][,1]/swapMax,
-#                        1 - 2*N_swap_pre_ls[[5]][,1]/swapMax,
-#                        1 - 2*N_swap_pre_ls[[6]][,1]/swapMax,
-#                        1 - 2*N_swap_pre_456[,1]/swapMax,
-#                        1 - 2*N_swap_pre_ran[,1]/(65*(65-1)/2)) )
-# colnames(df) <- c('neu', 'sec4', 'sec5','sec6', 'sec456', 'sec456 random')
-# dfm <- melt(df, id = 'neu')
-# 
-# # Figure 6H
-# dev.new()
-# # pdf(file = "sector RI.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-# 
-# ggplot(dfm, aes(factor(variable), value) ) + 
-#   geom_jitter(aes(colour=variable),size = 4,height = 0, width = 0.1) +
-#   scale_colour_manual(values = c(dolphin_col_456, 'black', 'black'), guide=FALSE) +
-#   stat_summary(fun.min = function(z) { quantile(z,0.25) },
-#                fun.max = function(z) { quantile(z,0.75) },
-#                geom = "errorbar", position = position_nudge(x = 0.2, y = 0),
-#                colour = 'black', size = 1, width = .2 ) +
-#   stat_summary(fun = median, geom = "point",  colour = 'black', position = position_nudge(x = 0.2, y = 0),size = 5 ) +
-#   coord_cartesian(ylim = c(-0.5, 1)) +
-#   theme_minimal_grid() +
-#   labs(title = "sector RI", x='quantity', y='RI') 
-# 
-# dev.off()
 
 
+# dist betw LC6 based on pre-syn ------------------------------------------
 
-# -- dist betw LC6 based on pre-syn
 # 4, 5, 6, 8 and combined
 N_swap_pre_ls <- list()
 
@@ -1726,20 +1357,19 @@ dev.new()
 ggplot(dfm, aes(factor(variable), value) ) + 
   geom_jitter(aes(colour=variable),size = 4,height = 0, width = 0.1) +
   scale_colour_manual(values = c(dolphin_col_456, 'black', 'black'), guide=FALSE) +
-  stat_summary(fun.min = function(z) { quantile(z,0.25) },
-               fun.max = function(z) { quantile(z,0.75) },
+  stat_summary(fun.data = mean_se,
                geom = "errorbar", position = position_nudge(x = 0.2, y = 0),
                colour = 'black', size = 1, width = .2 ) +
-  stat_summary(fun = median, geom = "point",  colour = 'black', position = position_nudge(x = 0.2, y = 0),size = 5 ) +
+  stat_summary(fun = mean, geom = "point",  colour = 'black', size = 1, position = position_nudge(x = 0.2, y = 0)) +
   coord_cartesian(ylim = c(-0.5, 1)) +
   theme_minimal_grid() +
   labs(title = "sector RI", x='quantity', y='RI') 
 
 dev.off()
 
-# Mann-Whitney
-wilcox.test(df[,4], df[,5], alternative = 'two.sided')
-wilcox.test(df[,6], alternative = 'two.sided')
+# # Mann-Whitney
+# wilcox.test(df[,4], df[,5], alternative = 'two.sided')
+# wilcox.test(df[,6], alternative = 'two.sided')
 
 # LC6-LC6 syn-weighted distance -----------------------------------------------------------------------------------
 
@@ -1763,13 +1393,7 @@ for (j in 1:length(LC6)) {
   LC6_nnbdist[j] <- min(tib_tmp[,"dist_com"])
   LC6_avgdist_wt[j,] <- c(j, sum(tib_tmp[,"distxN"])/sum(tib_tmp[,"Nconn_glo"]))
 }
-# avg_nb <- mean(N_nb)
 
-
-# dist_nonzero <- dist_Nconn %>%
-#   filter(distxN != 0) %>%
-#   transmute(Nconn_glo, distxN) %>%
-#   data.matrix()
 
 # - randomize connection partners
 mat_avgdist_rand <- matrix(ncol = 2, nrow = length(LC6))
@@ -1788,7 +1412,7 @@ for (j in 1:length(LC6)) {
 }
 
 
-# Figure 5SB, syn-wt LC6 distance
+# Figure 5S1A, syn-wt LC6 distance
 dat_ggplot <- data.frame(rbind(LC6_avgdist_wt, mat_avgdist_rand))
 gp  <- factor(c(rep(1,length(LC6)),rep(2,length(LC6))), labels = c("EM data","Randomized"))
 dat_ggplot <- cbind(dat_ggplot, gp)
@@ -1819,18 +1443,11 @@ wilcox.test(LC6_avgdist_wt, mat_avgdist_rand, alternative = 'less')
 
 
 
-# glomerulus dolphin compartment ----------------------------------------------------------------------------------
+# glomerulus  compartment ----------------------------------------------------------------------------------
 
 N_gp <- 11
 getPalette <- colorRampPalette(brewer.pal(9, "RdYlBu"))
 dolphin_col <- getPalette(N_gp - 1)
-
-
-# 
-# # for making ahull
-# conn_LC6 <- LC6_pre # only pre-synapses to divide the dolphin
-# glo_div <- quantile(conn_LC6$x, probs = seq(0,1,length.out = N_gp)) #separate into divisions of equal pts based on x
-# glo_div[1] <- glo_div[1]-1
 
 conn_LC6 <- LC6_pre
 
@@ -1938,7 +1555,7 @@ grid_Gaussian_sum$gp <- factor(grid_Gaussian_sum$gp)
 #           plvl[[10]])
 
 
-# - Figure S6C, LC6 syn in glo 10 compartments
+# - Figure dolphin, LC6 syn in glo 10 compartments
 # color contours
 xy_bd_chull_df <- as.data.frame(xy_bd_chull)
 gg_cont <- ggplot(grid_Gaussian_sum, aes(X, Y, z = Z)) +
@@ -2024,7 +1641,7 @@ ggdraw() +
 
 
 
-# Figure S6D, 10 individual compartments
+# Figure 6S1C, 10 individual compartments
 ii_inpoly <- sp::point.in.polygon(bd_grid[,1], bd_grid[,2], xy_bd_chull[,1], xy_bd_chull[,2])
 plvl <- list()
 simdata <- list()
@@ -2092,12 +1709,3 @@ plvl[[9]]
 dev.new()
 plvl[[10]]
 
-
-
-# stats test ------------------------------------------------------------------------------------------------------
-
-# KS test
-ks.test(LC6_avgdist_wt, mat_avgdist_rand)
-
-# Mann-Whitney
-wilcox.test(LC6_avgdist_wt, mat_avgdist_rand, alternative = 'less')

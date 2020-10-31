@@ -1,6 +1,12 @@
 # codes used for analyze LC6 and downstream neurons
 # !!! open with encoding UTF-8
 
+# USAGE
+# 1/ run this code to load in data and libraries
+# 2/ open one of the processing script
+# 3/ search for, eg., "Figure 5B" or "Figure 5S1A" for a figure in the paper
+#    then run the code within that block
+
 
 #  load libraries and startup -----------------------------------------------------------------------------------------
 
@@ -18,12 +24,7 @@ library(alphahull)
 library(reshape2)
 library(Hmisc)
 library(colorspace)   ## hsv colorspace manipulations
-
-
-setwd("C:/Users/zhaoa/Dropbox (HHMI)/sync_userA/Documents/ReiserGroup/p_LC6/LC6_code_R")
-# setwd("C:/Users/zhaoa/Dropbox (HHMI)/LC6 downstream paper new/Code")
-# setwd("./") # set to this code's directory
-# source("someFunc.R") # load some useful functions
+library(R.matlab)
 
 # clean everythign up.  
 rm(list=ls())
@@ -35,7 +36,6 @@ while (rgl.cur() > 0) { rgl.close() }
 rgl::setupKnitr()
 
 
-
 # Buchner 71 eye map from Andrew Straw----------------------------------------------------------------------------------------------
 
 Npt <- 699
@@ -43,19 +43,15 @@ buchner <- read.csv("data/buchner71_tp.csv", header = FALSE)
 buchner <- buchner[1:Npt,]
 buchner <- buchner / pi * 180
 
-dev.new()
-plot(buchner)
+# dev.new()
+# plot(buchner)
 
 range(buchner[buchner[,2] > 70 & buchner[,2] < 110, 1]) # [-7, 160] as horizontal range
-# range(buchner[buchner,2]) 
-
 buchner_phi <- c(-10, 160) # for longitude
-
-
 
 # functions  ---------------------------------------------------------------------
 
-# -- generate polygon from set of points
+# - generate polygon from set of points
 mkpoly <- function(xy) {
   xy <- as.data.frame(xy)[,1:6]
   xyset <- list() # vertices for a list of polygons
@@ -98,27 +94,6 @@ arcLength <- function(p1, p2) {
   c2 <- sum((p1_xyz - p2_xyz)^2)
   arc_ang <- acos((2-c2)/2)
   return(arc_ang*1)
-}
-
-# - bubble sort function, x is member of Sn, symmetric group of n letters from an ordered set
-bubble_sort <- function(x){ 
-  n <- length(x)
-  N_swap <- 0
-  repeat{
-    swapped = FALSE
-    for (j in 1:(n-1)) {
-      if (x[j] > x[j+1]) {
-        x[c(j,j+1)] <- x[c(j+1,j)]
-        swapped = TRUE
-        N_swap <- N_swap + 1
-      }
-    }
-    n <- n - 1
-    if (swapped == FALSE | n == 1) {
-      break()
-    }
-  }
-  return(list(x, N_swap))
 }
 
 # - alt, find the nth letter and insert at nth position, works for set(seq(1,n))
@@ -196,61 +171,10 @@ sph2cartZ <- function(rtp){
   return(cbind(x,y,z))
 }
 
+# load neuron and neuropil mesh --------------------------------------------------------------------------------------------
 
-
-# # load neurons ----------------------------------------------------------------------------------------------------
-# 
-# # -- LC6 neurons
-# anno_LC6 <- catmaid_query_by_annotation("^LC6 neuron$")
-# anno_RHS <- catmaid_query_by_annotation("^LO-R")
-# anno_rightLC6 <- anno_LC6[anno_LC6[,1] %in% anno_RHS[,1],]
-# LC6_skid <- anno_rightLC6[,"skid"]
-# neu <-  read.neurons.catmaid(LC6_skid, .progress='text')
-# LC6 <- neu
-# 
-# altTract <- c(8,14,19,39)
-
-# -- target neurons
-anno_ipsi <- catmaid_query_by_annotation("^putative ss2036$")
-ipsi_skid <- anno_ipsi[,"skid"]
-neu_ipsi <-  read.neurons.catmaid(ipsi_skid, .progress='text')
-
-# anno_biL <- catmaid_query_by_annotation("^LC6 target - bilateral$")
-# biL_skid <- anno_biL$skid # LHS x4 ,
-# biL_skid <- biL_skid[1:2] #select 2
-biL_skid <- c(3149978, 3262999)
-neu_biL <- read.neurons.catmaid(biL_skid, .progress='text')
-
-biR_skid <- c(3154013, 3155729) #RHS x2
-neu_biR <- read.neurons.catmaid(biR_skid, .progress='text')
-
-# neu_target <- c(neu_biL, neu_biR, neu_ipsi)
-# 
-# # -- TM5
-# neu_JSON <- fromJSON(file = "data/Tm5_LC6 mapping.json")
-# neu_skid <- c()
-# for (j in 1:length(neu_JSON)) {
-#   neu_skid[j] <- neu_JSON[[j]]$skeleton_id
-# }
-# TM5 = read.neurons.catmaid(neu_skid, .progress='text')
-# 
-# # -- load glomerulus volumne mesh 
-# glo_vol <- catmaid_get_volume("v14.LC6_glomerulus_preSyn_R")
-# 
-# # -- whole brain mesh
-# v14 <- catmaid_get_volume(439, rval = 'mesh3d')  
-
-
-# load old neuron data --------------------------------------------------------------------------------------------
-
-load("neurons_20200828.RData")
-
-# -- load glomerulus volumne mesh 
-glo_vol <- catmaid_get_volume("v14.LC6_glomerulus_preSyn_R")
-
-# -- whole brain mesh
-v14 <- catmaid_get_volume(439, rval = 'mesh3d')  
-
+load("data/neurons_20200828.RData")
+load("data/neuropil_mesh.RData")
 
 # connections -----------------------------------------------------------------------------------------------------
 
@@ -287,9 +211,7 @@ if (exists("LC6LC6")) {
   rm(LC6LC6)
 }
 for (j in 1:length(neu)) {
-  # tar_pre <- neu[[j]]
   for (k in 1:length(neu)) {
-    # tar_post <- neu[[k]]
     cft <- catmaid_get_connectors_between(pre_skids = neu[[j]]$skid, post_skids = neu[[k]]$skid)
     if (!is.null(cft)) {
       cft_nrow <- dim(cft)[1]
@@ -354,11 +276,6 @@ N_gp <- 11
 glo_div <- quantile(LC6_pre$x, probs = seq(0,1,length.out = N_gp)) #separate into divisions of equal pts based on x
 glo_div[1] <- glo_div[1]-1
 
-# make a glo mesh
-# conn_LC6_gloHull <- LC6_pre[-c(1642, 1641, 6649, 6643, 6647, 6686, 6679, 6681, 6685,
-#                                 2942, 2943, 6650, 6651, 6652, 6655, 6646, 4482, 4483,
-#                                 4485, 4512, 4480, 4479),
-#                              c('x','y','z')]
 conn_LC6_gloHull <- LC6_pre[-c(1644, 1643, 6649, 6658, 6655, 6653, 6654, 6652, 6650,
                                6646, 6689, 2946, 2947, 6682, 6684, 6688, 4485, 4486,
                                4489, 4488, 4491, 4405),
@@ -369,11 +286,9 @@ glo.msh <- as.mesh3d(glo.as)
 # filter for neurites within the mesh
 LC6_glo <- nlapply(LC6, subset, function(x) pointsinside(x, surf=glo.msh, rval='distance') > -5000)
 
-
-nopen3d()
-plot3d(LC6_glo)
-shade3d(glo.msh, alpha = 1)
-# points3d(conn_LC6_gloHull)
+# nopen3d()
+# plot3d(LC6_glo)
+# shade3d(glo.msh, alpha = 1)
 
 # resample
 LC6_glo_rs <- resample(LC6_glo, stepsize = 400)
@@ -473,14 +388,10 @@ for (j in 1:length(neu_target)) {
 
 # ephy data -------------------------------------------------------------------------------------------------------
 
-library(cowplot)
-library(R.matlab)
 expBi3 <- readMat("data/ss825_bi_RF_indiv_tseries.mat") #bi
 expBi3 <- expBi3[[1]]
 expBi <- readMat("data/ss825_mean_RFmap_n=4.mat") #bi
-# expBi <- readMat("C:/Users/zhaoa/Dropbox (HHMI)/sync_userA/Documents/ReiserGroup/p_LC6/dataFromMai/ss825_mean_AUC_RFmap_n=4.mat") #bi
 expBi <- as.matrix(expBi[[1]])
-
 
 expIpsi3 <- readMat("data/ss2036_ipsi_RF_indiv_tseries.mat") #ipsi
 expIpsi3 <- expIpsi3[[1]]
@@ -490,11 +401,6 @@ expIpsi <- as.matrix(expIpsi[[1]])
 # indexing
 ind_mai <- c(t(matrix(seq(1:98), byrow = F, ncol = 14)))
 tar_pal <- brewer.pal(4,"RdYlBu")[c(1,3,4,2)]
-
-
-# x2 <- seq(-18 - 2.25, 99 - 2.25, by = 9) # -18 to 99, with sim data
-# y2 <- seq(54, 108,by = 9)
-# xygrid2 <- expand.grid(x2, y2) # looming center position 
 
 # loom position from Matt
 loom_theta_mat <- read.csv('data/loom_center_theta.txt', sep = ',', header = F) / pi * 180
@@ -514,7 +420,6 @@ shim_xy <- as.matrix(shim_xy)
 shim_xy <- t(shim_xy) / pi * 180
 shim_xy[,2] <- - shim_xy[,2] + 90
 shim_xy <- shim_xy[shim_xy[,1] > min(loom_phi)-4.5 & shim_xy[,1] < max(loom_phi)+4.5 & shim_xy[,2] > min(loom_theta)-4.5 & shim_xy[,2] < max(loom_theta)+4.5, ]
-# head(shim_xy,1); tail(shim_xy,1); max(shim_xy[,1]); min(shim_xy[,2])
 ptadd <- c(max(shim_xy[,1]), min(shim_xy[,2]))
 shim_xy <- rbind(shim_xy, ptadd)
 shim_xy <- as.data.frame(shim_xy)
@@ -527,27 +432,4 @@ colnames(expBi_df) <- c("x","y","z")
 expIpsi_df <- data.frame(xygrid2, as.vector(t(expIpsi)))
 colnames(expIpsi_df) <- c("x","y","z")
 
-
-
-# user stats ------------------------------------------------------------------------------------------------
-
-user_stat <- catmaid_get_contributor_stats(c(LC6_skid, ipsi_skid, biL_skid, biR_skid))
-
-user_stat$node_contributors[order(user_stat$node_contributors$n),]
-user_stat$pre_contributors[order(user_stat$pre_contributors$n), ]
-user_stat$post_contributors[order(user_stat$post_contributors$n), ]
-user_stat$review_contributors[order(user_stat$review_contributors$n), ]
-
-udf <- catmaid_get_user_list()
-
-# make a df of contributions 
-jd <- full_join(user_stat$post_contributors, user_stat$pre_contributors, by = "id")
-jd <- full_join(jd, user_stat$review_contributors, by = 'id')
-jd <- full_join(jd, user_stat$node_contributors, by = 'id')
-jd[is.na(jd)] <- 0
-jd <- left_join(jd, udf) %>%
-  # mutate(n = n.x + n.y + n.x.x + n.y.y) %>%
-  mutate(n = n.x + n.y ) %>%
-  select(id, n, full_name) %>%
-  arrange(desc(n)) 
 
