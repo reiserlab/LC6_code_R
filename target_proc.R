@@ -12,10 +12,6 @@ ii_inpoly <- sp::point.in.polygon(bd_grid[,1], bd_grid[,2], xy_bd_chull[,1], xy_
 plvl <- list()
 simdata <- list()
 simdata_df <- list()
-# LC6_tar_median <- list()
-# for (j in 1:length(conn_target)) {
-#   LC6_tar_median[[j]] <- (quantile(conn_target[[j]]$tofrom_glo, c(0.0)))
-# }
 mat_names <- c(paste("biL_", biL_skid, sep = ""), 
                paste("biR_", biR_skid, sep = ""), 
                paste("ipsi_", ipsi_skid, sep = ""))
@@ -36,10 +32,7 @@ for (j in 1:length(neu_target)) {
     x0 <- (xy_com[[k]]["phi_deg"])
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- conn_target[[j]][k,"tofrom_glo"]
-    # if (A >= LC6_tar_median[[j]]) { # selected neuron
-      grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
-      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/2)^2 - (x[2]-y0)^2/(r_xy/2)^2))
-    # }
+    grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
   }
   
   grid_Gaussian_cut <- grid_Gaussian %>%
@@ -49,10 +42,6 @@ for (j in 1:length(neu_target)) {
   simdata[[j]] <- grid_Gaussian_cut
   simdata_df[[j]] <- simdata[[j]]
   colnames(simdata_df[[j]]) <- c("x","y","z")
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z / max(simdata_df[[j]]$z)
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z + 0.001
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z / max(simdata_df[[j]]$z)
-  # simdata_df[[j]]$equalSpace <- cut(simdata_df[[j]]$z, seq(0,max(simdata_df[[j]]$z),length.out = n_lvl))
   
   simdata_df[[j]]$z <- simdata_df[[j]]$z / mean(head(sort(simdata_df[[j]]$z, decreasing = T)))
   simdata_df[[j]]$equalSpace <- cut(simdata_df[[j]]$z, seq(0,max(simdata_df[[j]]$z),length.out = n_lvl))
@@ -121,18 +110,11 @@ for (j in 1:length(conn_target_agglo_sum)) {
     x0 <- (xy_com[[k]]["phi_deg"])
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- conn_target_agglo_sum[[j]][k,"tofrom_glo"]
-    # if (A > 0) { # selected neuron
-      # grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
-      grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/3*2)^2 - (x[2]-y0)^2/(r_xy/3*2)^2))
-    # }
+    grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/(r_xy/3*2)^2 - (x[2]-y0)^2/(r_xy/3*2)^2))
   }
   simdata[[j]] <- grid_Gaussian
   simdata_df[[j]] <- simdata[[j]]
   colnames(simdata_df[[j]]) <- c("x","y","z")
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z / max(simdata_df[[j]]$z)
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z + 0.001
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z / max(simdata_df[[j]]$z)
-  # simdata_df[[j]]$equalSpace <- cut(simdata_df[[j]]$z, seq(0,max(simdata_df[[j]]$z),length.out = n_lvl))
   
   simdata_df[[j]]$z <- simdata_df[[j]]$z / mean(head(sort(simdata_df[[j]]$z, decreasing = T)))
   simdata_df[[j]]$equalSpace <- cut(simdata_df[[j]]$z, seq(0,max(simdata_df[[j]]$z),length.out = n_lvl))
@@ -202,7 +184,6 @@ for (j in 1:5) {
 }
 dev.new()
 barplot(LC6_ipsi_dol[,c(3,2,4,5,1)], main = 'LC6 to ipsi in dolphin compartments', ylim = c(-0.1, 1.2), col = dolphin_col )
-# legend(x = 5, y = 800, legend = c(paste(seq(1,10))), cex = 1.3, fill = dolphin_col, horiz = F)
 text(x = seq(0.7,5.5, length.out = 5), y = rep(1.1,5), labels = num_tot[c(3,2,4,5,1)])
 text(x = seq(0.7,5.5, length.out = 5), y = rep(-0.05,5), labels = ipsi_skid[c(3,2,4,5,1)])
 
@@ -305,22 +286,16 @@ pglo <- pglo +
   theme(legend.position = "bottom") +
   theme_void() +
   theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
-  # scale_y_reverse() +
   ylim(205000, 180000)+
-  # scale_x_reverse() +
-  # xlab("x") + 
-  # ylab("y") +
   coord_fixed(ratio = 1) +
   geom_segment(aes(x = 380000, y = 205000, xend = 390000, yend = 205000), size=2, lineend = "round") +
   annotate("text", x = 385000, y = 204000, label = "10 Âµm")+
   labs(title = "Synapses distribution in glomerulus")
 for (j in 1:(length(glo_div)-2)) {
   glo_bd <- data.frame(x1 = range_syn[j,2], x2 = range_syn[j,2], y1 = range_syn[j,3], y2 = range_syn[j,4])
-  # pglo <- pglo + geom_segment(data = glo_bd, aes(x = x1, y = y1, xend = x2, yend = y2))
 }
 for (j in 1:(length(glo_div)-1)) {
   pglo <- pglo + 
-    # annotate("text", x = com_syn[j,1], y = com_syn[j,2], label = paste(sprintf("%.1f %%", 100*N_syn[j,2]/sum(N_syn[,2]))))
     annotate("text", x = com_syn[j,1], y = com_syn[j,2], label = paste(sprintf("%.1f ", 100*N_syn[j,2]/sum(N_syn[,2]))))
 }
 
@@ -376,10 +351,6 @@ gg_cont <- ggplot(grid_Gaussian_sum, aes(X, Y, z = Z)) +
   scale_fill_manual(values = dolphin_col) +
   coord_fixed(ratio = 1) +
   scale_y_reverse()
-# for (j in 1:(length(glo_div)-1)) {
-#   gg_cont <- gg_cont + 
-#     geom_contour(data = grid_Gaussian_ls[[j]], aes(X,Y,z=Z), breaks = seq(gprange[[j]][1], gprange[[j]][2], length.out = 3), color = dolphin_col[j], alpha = 0.9, lwd = 3)
-# }
 titletext <- paste("ipsi,", cutofflevel*100, "% cutoff")
 gg_cont <- gg_cont + 
   labs(title = titletext)+
@@ -398,7 +369,6 @@ gg_cont <- gg_cont +
 # dolphin in colors
 pglo <- ggplot(conn_LC6_tar_ipsi) +
   geom_point(aes(x = x, y = y, colour = gp_x), shape = 16) 
-# geom_segment(data = ii_ahull, aes(x = x1, y = y1, xend = x2, yend = y2)) +
 for (j in 1:(length(glo_div)-1)) { #add ahulls
   pglo <- pglo + 
     geom_segment(data = ii_ahull_ls[[j]], aes(x = x1, y = y1, xend = x2, yend = y2))
@@ -409,7 +379,6 @@ pglo <- pglo +
   theme_void() +
   theme(legend.position = "bottom") +
   theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
-  # scale_y_reverse() +
   ylim(205000, 180000)+
   coord_fixed(ratio = 1) +
   geom_segment(aes(x = 380000, y = 205000, xend = 390000, yend = 205000), size=2, lineend = "round") +
@@ -453,21 +422,6 @@ points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = "cyan", 
 # rgl.snapshot(filename = "glo.png",fmt = "png")
 
 
-# # -- cp LM
-# nopen3d()
-# par3d('windowRect' = c(100,100,1100,1100))
-# # shade3d(v14, alpha=0.05)
-# shade3d(glo_vol, col = 'grey90', alpha = 0.3)
-# ipsi_pal <- brewer.pal(6, "RdYlBu")[c(1,2,3,5,6)]
-# tar <- neu_ipsi[[2]]
-# plot3d(tar, col = ipsi_pal[1])
-# points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = ipsi_pal[1], size = 20)
-# tar <- neu_ipsi[[3]]
-# plot3d(tar, col = ipsi_pal[5])
-# points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = ipsi_pal[5], size = 20)
-# rgl.viewpoint(userMatrix = rotationMatrix(1*90/180*pi+pi/2,1,0,0) %*% rotationMatrix(0,0,1,0), zoom = 1)
-
-
 #  Figure S7, individual targets  -------------------------------------------------------------------------------
 target_names <- c(paste("BiL_", biL_skid, sep = ""), 
                   paste("BiR_", biR_skid, sep = ""), 
@@ -478,7 +432,6 @@ for (j in 1:9) {
   nopen3d()
   par3d('windowRect' = c(100,100,1100,1100))
   rgl.viewpoint(userMatrix = rotationMatrix(1*90/180*pi+pi/2,1,0,0) %*% rotationMatrix(0,0,1,0), zoom = 1)
-  # shade3d(v14, alpha=0.05)
   shade3d(glo_vol, col = 'grey90', alpha = 0.3)
   tar <- neu_target[[j]]
   plot3d(tar, col = pal_target[j], lwd = 3)
@@ -490,14 +443,6 @@ for (j in 1:9) {
 
 
 #  Figure 7D -- time series mean + EM contour  --------------------------------------------------------------------
-
-# -- put in contour's coord
-# exp data range [-0.1, 1.4] vs [1, 280]/200
-# need to reverse y-axis
-
-# # starting locations
-# tseries_x0 <- sort(unique(expBi_df[,1])) - 4.5
-# tseries_y0 <- sort(unique(expBi_df[,2])) + 4.5
 
 
 # -- add up the same type
@@ -513,9 +458,6 @@ stim_end <- 250 # loom during the first 150 points, 4 sec
 stim_start <- 0
 
 # for exp data contour 
-# x4 <- seq(0-4.25,117-4.25,by = 9)
-# y4 <- seq(54, 108, by = 1)
-# xygrid4 <- expand.grid(x = x4, y = y4)
 x4 <- seq(-24, 111,by = 1) # range(loom_phi)
 y4 <- seq(58, 119, by = 1) # range(loom_theta)
 xygrid4 <- expand.grid(x = x4, y = y4)
@@ -525,7 +467,6 @@ ii_inpoly <- sp::point.in.polygon(bd_grid[,1], bd_grid[,2], xy_bd_chull[,1], xy_
 plvl <- list()
 simdata <- list()
 simdata_df <- list()
-# LC6_tar_median <- list()
 fdr <- list()
 ct_cut_pt <- list()
 
@@ -559,8 +500,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
   # exp_interp <- exp_interp[!is.na(exp_interp[,'z']), ] #why need this?
   
   grid_Gaussian <- as.data.frame(bd_grid[ii_inpoly == 1,])
-  # ii <- grid_Gaussian[,1] > 16
-  # grid_Gaussian[ii,2] <- slope_ex*(grid_Gaussian[ii,1] - 16) + grid_Gaussian[ii,2]
   grid_Gaussian$Z = 0
   colnames(grid_Gaussian) <- c("X","Y","Z")
   for (k in 1:length(neu)) {
@@ -568,13 +507,10 @@ for (j in 1:length(conn_target_agglo_sum)) {
     y0 <- (xy_com[[k]]["theta_deg"])
     A <- conn_target_agglo_sum[[j]][k,"tofrom_glo"]
     grid_Gaussian$Z <- apply(grid_Gaussian, 1, function(x) x[3] + 1*A*exp(-(x[1]-x0)^2/r_xy^2 - (x[2]-y0)^2/r_xy^2))
-    # }
   }
-  # grid_Gaussian[ii,2] <- round(- slope_ex*(grid_Gaussian[ii,1] - 16) + grid_Gaussian[ii,2])
   simdata[[j]] <- grid_Gaussian
   simdata_df[[j]] <- simdata[[j]]
   colnames(simdata_df[[j]]) <- c("x","y","z")
-  # simdata_df[[j]]$z <- simdata_df[[j]]$z / mean(head(sort(simdata_df[[j]]$z, decreasing = T)))
   simdata_df[[j]]$z <- simdata_df[[j]]$z / max(simdata_df[[j]]$z)
   simdata_df[[j]]$equalSpace <- cut(simdata_df[[j]]$z, seq(0,max(simdata_df[[j]]$z),length.out = n_lvl))
   
@@ -596,12 +532,9 @@ for (j in 1:length(conn_target_agglo_sum)) {
     annotate("text", x = -3, y = 139, label = "9°") +
     geom_segment(aes(x = -12, y = 135, xend = -12, yend = 124), size=2, lineend = "round") +
     annotate("text", x = -17.5, y = 124, label = "9°") +
-    # geom_segment(aes(x = -9, y = 90-lefty, xend = 16, yend = 90), size=2, lineend = "round") +
-    # geom_segment(aes(x = 16, y = 90, xend = 117, yend = 90-righty), size=2, lineend = "round") +
     geom_segment(aes(x = 0, y = 50, xend = 0, yend = 120), size = 2) + # range(loom_phi)
     geom_segment(aes(x = 90, y = 50, xend = 90, yend = 120), size = 2) +
     geom_segment(aes(x = -25, y = 90, xend = 115, yend = 90), size = 2) +
-    # theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
     scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
     scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
     theme_void() +
@@ -633,8 +566,6 @@ simdata_df_diff_ib$equalSpace <- cut(simdata_df_diff_ib$z, seq(-1,1,length.out =
 # Figure S5C
 
 # color
-# getPalette <- colorRampPalette(brewer.pal(9, "RdYlBu"))
-# ct_col <- getPalette(7)
 ct_col <- brewer.pal(9, "RdYlBu")[c(1,2,3,4,7,8,9)]
 
 # -- add up the same type
@@ -670,11 +601,8 @@ for (j in 1:length(conn_target_agglo_sum)) {
   }
   indi_max[[j]] <- max_tmp
   mai_mean <- rowMeans(exp_raw[[j]], dims = 2, na.rm = T)
-  # amp_max <- quantile(na.omit(c(mai_mean)), probs = c(0.98)) # normalize to 98% 
-  # mai_mean <- mai_mean / amp_max
   
   # t-test
-  # mu_test <- sum(exp_raw[[j]][ind_mai[c(12,13,14,27,28,42,56)], stim_start:stim_end, ]) / 7 / dim(exp_raw[[j]])[3]
   mu_test <- sum(exp_raw[[j]][ind_mai[c(13,14,28,42)], stim_start:stim_end, ]) / 4 / dim(exp_raw[[j]])[3]
   pval_tmp <- c()
   for (k in 1:dim(exp_raw[[j]])[1]) {
@@ -709,12 +637,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
   }
   plvl_ol[[j]] <- plvl_ol[[j]] + labs(title = paste("Target ipsi exp vs", mat_names[j], ", 70%", "N=",sum(conn_target_agglo_sum[[j]][,"tofrom_glo"]),sep = " ")) +
     geom_polygon(data = shim_xy, aes(x,y), fill = 'black', alpha = 0.3) +
-    # geom_contour(data = simdata_df[[j]], aes(x,y,z=z), breaks = c(0.71), color = "blue", alpha = 1, lwd = 2) +
-    # geom_contour(data = exp_interp, aes(x,y,z=z), breaks = c(0.61), color = "red", alpha = 1, lwd = 2) +
-    # geom_segment(aes(x = -12, y = 115, xend = -3, yend = 115), size=2, lineend = "round") +
-    # annotate("text", x = -3, y = 119, label = "9°") +
-    # geom_segment(aes(x = -12, y = 115, xend = -12, yend = 106), size=2, lineend = "round") +
-    # annotate("text", x = -17.5, y = 105, label = "9°") +
     geom_segment(aes(x = -12, y = 135, xend = -3, yend = 135), size=2, lineend = "round") +
     annotate("text", x = -3, y = 139, label = "9°") +
     geom_segment(aes(x = -12, y = 135, xend = -12, yend = 124), size=2, lineend = "round") +
@@ -722,11 +644,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
     geom_segment(aes(x = 0, y = 50, xend = 0, yend = 120), size = 2) + # range(loom_phi)
     geom_segment(aes(x = 90, y = 50, xend = 90, yend = 120), size = 2) +
     geom_segment(aes(x = -25, y = 90, xend = 115, yend = 90), size = 2) +
-    # geom_segment(aes(x = 0, y = y2[1]-4.5, xend = 0, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-    # geom_segment(aes(x = 90, y = y2[1]-4.5, xend = 90, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-    # geom_segment(aes(x = x2[1], y = 90-lefty, xend = 0, yend = 90), size=1, lineend = "round") +
-    # geom_segment(aes(x = 0, y = 90, xend = tail(x2,1), yend = 90-righty), size=1, lineend = "round") +
-    # geom_segment(aes(x = min(loom_phi), y = 90, xend = max(loom_phi), yend = 90), size=1, lineend = "round") +
     scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
     scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
     theme_void() +
@@ -756,10 +673,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
         geom_polygon(data = shim_xy, aes(x,y), fill = 'black', alpha = 0.3) +
         # geom_contour(data = simdata_df[[j]], aes(x,y,z=z), breaks = c(0.71), color = "blue", alpha = 1, lwd = 2) +
         geom_contour(data = exp_interp, aes(x,y,z=z), breaks = c(0.61 * max(exp_interp[,3])), color = ct_col[2*(k-1)+1], alpha = 1, lwd = 2) +
-        # geom_segment(aes(x = -12, y = 115, xend = -3, yend = 115), size=2, lineend = "round") +
-        # annotate("text", x = -3, y = 119, label = "9°") +
-        # geom_segment(aes(x = -12, y = 115, xend = -12, yend = 106), size=2, lineend = "round") +
-        # annotate("text", x = -17.5, y = 105, label = "9°") +
         geom_segment(aes(x = loom_phi[1]-4.5, y = loom_theta[1]+4.5, xend = loom_phi[1]-4.5, yend = loom_theta[1]-9+4.5), size=2, lineend = "round") +
         annotate("text", x = loom_phi[1]-4.5-4.5, y = loom_theta[1]-4.5+4.5, label = "ΔF/F") +
         annotate("text", x = loom_phi[1]-4.5-4.5, y = loom_theta[1]+4.5, label = paste(indi_max[[j]][k])) +
@@ -768,23 +681,10 @@ for (j in 1:length(conn_target_agglo_sum)) {
         geom_segment(aes(x = 0, y = 50, xend = 0, yend = 120), size = 2) + # range(loom_phi)
         geom_segment(aes(x = 90, y = 50, xend = 90, yend = 120), size = 2) +
         geom_segment(aes(x = -25, y = 90, xend = 115, yend = 90), size = 2) +
-        # geom_segment(aes(x = 0, y = y2[1]-4.5, xend = 0, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-        # geom_segment(aes(x = 90, y = y2[1]-4.5, xend = 90, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-        # geom_segment(aes(x = x2[1], y = 90-lefty, xend = 0, yend = 90), size=1, lineend = "round") +
-        # geom_segment(aes(x = 0, y = 90, xend = tail(x2,1), yend = 90-righty), size=1, lineend = "round") +
-        # geom_segment(aes(x = min(loom_phi), y = 90, xend = max(loom_phi), yend = 90), size=1, lineend = "round") +
         scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
         scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
         theme_void() +
         coord_fixed(ratio = 1)
-      
-      # if (k == 1) {
-      #   plvl_bi[[k]] <- plvl_bi[[k]] + 
-      #     geom_segment(aes(x = loom_phi_mat[1,1], y = loom_theta_mat[1,1], xend = loom_phi_mat[1,14], yend = loom_theta_mat[1,14]), size = 1, lineend = "round", col = 'blue') + # exp
-      #     geom_segment(aes(x = loom_phi_mat[7,1], y = loom_theta_mat[7,1], xend = loom_phi_mat[7,14], yend = loom_theta_mat[7,14]), size = 1, lineend = "round", col = 'blue') +
-      #     geom_segment(aes(x = loom_phi_mat[1,1], y = loom_theta_mat[1,1], xend = loom_phi_mat[7,1], yend = loom_theta_mat[7,1]), size = 1, lineend = "round", col = 'blue') + 
-      #     geom_segment(aes(x = loom_phi_mat[1,14], y = loom_theta_mat[1,14], xend = loom_phi_mat[7,14], yend = loom_theta_mat[7,14]), size = 1, lineend = "round", col = 'blue')  
-      # }
       
       # -- 10 contours for ephys
       exp_interp_ct <- exp_interp
@@ -795,7 +695,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
         ggplot(exp_interp_ct, aes(x, y, z = z)) +
         geom_raster(aes(fill = equalSpace), interpolate = F) +
         scale_fill_manual(values = pal_tar) +
-        # geom_contour(data = exp_interp_ct, aes(x,y,z=z), breaks = c(0.7), color = "blue", alpha = 1, lwd = 1) +
         geom_contour(data = exp_interp_ct, aes(x,y,z=z), breaks = c(0.61), color = ct_col[2*(k-1)+1], alpha = 1, lwd = 2) +
         geom_segment(aes(x = 0, y = 50, xend = 0, yend = 120), size = 2) + # range(loom_phi)
         geom_segment(aes(x = 90, y = 50, xend = 90, yend = 120), size = 2) +
@@ -815,7 +714,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
       
       plvl_ipsi[[k]] <- plvl_ipsi[[k]] + labs(title = paste(k, ", ipsi, 60%" ,sep = " ")) +
         geom_polygon(data = shim_xy, aes(x,y), fill = 'black', alpha = 0.3) +
-        # geom_contour(data = simdata_df[[j]], aes(x,y,z=z), breaks = c(0.71), color = ct_col[k], alpha = 0, lwd = 2) +
         geom_contour(data = exp_interp, aes(x,y,z=z), breaks = c(0.61 * max(exp_interp[,3])), color = ct_col[k], alpha = 1, lwd = 2) +
         geom_segment(aes(x = loom_phi[1]-4.5, y = loom_theta[1]+4.5, xend = loom_phi[1]-4.5, yend = loom_theta[1]-9+4.5), size=2, lineend = "round") +
         annotate("text", x = loom_phi[1]-4.5-4.5, y = loom_theta[1]-4.5+4.5, label = "ΔF/F") +
@@ -825,11 +723,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
         geom_segment(aes(x = 0, y = 50, xend = 0, yend = 120), size = 2) + # range(loom_phi)
         geom_segment(aes(x = 90, y = 50, xend = 90, yend = 120), size = 2) +
         geom_segment(aes(x = -25, y = 90, xend = 115, yend = 90), size = 2) +
-        # geom_segment(aes(x = 0, y = y2[1]-4.5, xend = 0, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-        # geom_segment(aes(x = 90, y = y2[1]-4.5, xend = 90, yend = tail(y2,1)+4.5), size = 1, lineend = "round") +
-        # geom_segment(aes(x = x2[1], y = 90-lefty, xend = 0, yend = 90), size=1, lineend = "round") +
-        # geom_segment(aes(x = 0, y = 90, xend = tail(x2,1), yend = 90-righty), size=1, lineend = "round") +
-        # geom_segment(aes(x = min(loom_phi), y = 90, xend = max(loom_phi), yend = 90), size=1, lineend = "round") +
         scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
         scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
         theme_void() +
@@ -939,8 +832,6 @@ for (j in 1:2) {
   simdata_ct[[j]] <- simdata_df[[j]][simdata_df[[j]]$z > 0.71, 1:2]
   ash <- ashape(simdata_ct[[j]]+matrix(runif(dim(simdata_ct[[j]])[1]*2, 1e-9, 2e-9), ncol = 2), alpha = 5)
   simdata_poly[[j]] <- mkpoly(ash$edges)[[1]][,3:4]
-  # dev.new()
-  # polygon(simdata_poly[[j]])
 }
 
 
@@ -985,11 +876,6 @@ ggplot(ol_ratio, aes(x = pair, group = pair, y = ratio)) +
   scale_x_continuous(breaks=c(1,2,3,4), labels=c("bi-biEM", "ipsi-biEM", "bi-ipsiEM", "ipsi-ipsiEM"))+
   theme_bw()
 
-# ggplot(ol_ratio, aes(x = pair, group = pair, y = ratio)) + geom_boxplot()+
-#   scale_x_continuous(breaks=c(1,2,3,4), labels=c("bi-biEM", "ipsi-biEM", "bi-ipsiEM", "ipsi-ipsiEM")) +
-#   geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5) 
-
-
 
 
 # delta  EM  ------------------------------------------------------------------------------------------------------
@@ -997,8 +883,6 @@ ggplot(ol_ratio, aes(x = pair, group = pair, y = ratio)) +
 simdata_df_diff <- simdata_df[[1]][,1:3]
 simdata_df_diff$z <- simdata_df_diff$z - simdata_df[[2]]$z
 simdata_df_diff$z <- simdata_df_diff$z / max(abs(simdata_df_diff$z))
-# simdata_df_diff$equalSpace <- cut(simdata_df_diff$z, seq(0,max(abs(simdata_df_diff$z)),length.out = n_lvl))
-# simdata_df_diff$equalSpace <- cut(simdata_df_diff$z, seq(min(simdata_df_diff$z),max(simdata_df_diff$z),length.out = n_lvl))
 simdata_df_diff$equalSpace <- cut(simdata_df_diff$z, seq(-1,1,length.out = n_lvl))
 
 # contour map
@@ -1011,10 +895,7 @@ ggplot(simdata_df_diff, aes(x, y, z = z)) +
   annotate("text", x = 14.5, y = 185, label = "9°") +
   geom_segment(aes(x = 10, y = 180, xend = 10, yend = 171), size=2, lineend = "round") +
   annotate("text", x = 5, y = 175.5, label = "9°") +
-  # geom_segment(aes(x = -9, y = 90-lefty, xend = 16, yend = 90), size=2, lineend = "round") +
-  # geom_segment(aes(x = 16, y = 90, xend = 180, yend = 79.1), size=2, lineend = "round") + #90-slope_ex*(180-16)
   geom_segment(aes(x = min(loom_phi), y = 90, xend = 160, yend = 90), size=1, lineend = "round") +
-  # theme(axis.title = element_blank(), axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
   scale_x_continuous(breaks = x_tick, labels = paste(c(0, 45, 90, 135, 180))) +
   scale_y_reverse(breaks = y_tick, labels = paste(c(90, 45, 0, -45 ,-90))) +
   geom_segment(aes(x = 0, y = 0, xend = 0, yend = 180), size = 2, lineend = "round") +
@@ -1119,9 +1000,6 @@ ind_bi_ipsi_front <- c(48,1,4,39,44,14,19,8) #front
 ind_bi_ipsi_lat <- c(24,25,56,55,57,9,26,2) #lateral
 
 ind_bi_ipsi <- ind_bi_ipsi_front
-# ind_bi_ipsi <- ind_bi_ipsi_lat
-
-# ind_bi_ipsi <- sample(65, 8) # random
 
 # -- ref neu
 ind_sep <- c(44,46)
@@ -1169,7 +1047,6 @@ for (j in 1:N_cs) {
   pt_yz <- matrix(NA, ncol = 2, nrow = length(LC6))
   for (k in 1:nrow(pt_yz)) {
     xyz_m <- xyzmatrix(LC6_sp_glo_rs[[k]]$d)
-    # xyz_m <- xyz_m[xyz_m[,1] > glo_div[j] & xyz_m[,1] < glo_div[j+1],]
     xyz_m_ind <- apply(xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
     if (sum(xyz_m_ind) > 0) {
       if (sum(xyz_m_ind) == 1) { #if single pt
@@ -1234,9 +1111,6 @@ for (j in 1:N_cs) {
 }
 
 
-# dd_ls_tar_front <- dd_ls_tar
-# dd_ls_tar_lateral <- dd_ls_tar
-
 # - control, max diameter in each cross section
 x <- seq(range_x[1], range_x[2], by = dL)
 y <- seq(182500, 204500, by = dL)
@@ -1247,7 +1121,6 @@ colnames(glo_xyzgrid) <- c('x','y','z')
 
 cs_dia <- matrix(ncol = 1, nrow = N_cs)
 for (j in 1:N_cs) {
-  # ii <- glo_xyzgrid[,1] < (range_x[2] - (j-1)*2*dL) & glo_xyzgrid[,1] > (range_x[2] - (j)*2*dL)
   ii <- glo_xyzgrid[,1] > (range_x[1] + (j-1)*2*dL) & glo_xyzgrid[,1] < (range_x[1] + (j)*2*dL)
   xyz <- glo_xyzgrid[ii,]
   cs_dia[j] <- max(dist(xyz))
@@ -1260,7 +1133,6 @@ dd_tar <- matrix(unlist(dd_ls_tar), ncol = 9, byrow = T)
 
 # --- choose one
 ii_target <- c(3,7) #2
-# ii_target <- c(4,5,6,8,9) #rest
 
 df <- data.frame(dd_tar[1:80, ii_target])
 df <- cbind(seq(1,80), df)
@@ -1278,11 +1150,7 @@ dev.new()
 # pdf(file = paste("avg dist to lat LC rest.pdf",sep = ''), width = 8, height = 4,pointsize=12,family="Helvetica", useDingbats = F)
 
 ggplot(dfm, aes(x=pos, y=value) ) + 
-  # geom_point( ) +
   geom_line(aes(colour = factor(variable), group = variable), lwd = 3) +
-  # coord_cartesian(ylim = c(-.5, 1)) +
-  # theme_minimal_grid() +
-  # theme_bw() +
   scale_colour_manual(values = c(pal_target[ii_target], 'grey'),
                       labels = c(target_names[ii_target], "radius")) +
   scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0)) +
@@ -1314,46 +1182,10 @@ segments3d(rbind(c(range_x[1]+20*2*dL,230000-cos(30/180*pi)*12000,130000-sin(30/
 # rgl.snapshot(filename = "80 sectors.png",fmt = "png")
 
 
-# # PLOT cable
-# m <- 30
-# 
-# df_plt <- rbind(yz_ls[[m]][c(ind_sep,ind_bi_ipsi), ], yz_ls_tar[[m]][c(3,4,7),]) %>% 
-#   as.data.frame()
-# df_plt$colcol <- factor(c(rep(1,2),
-#                           rep(2,length(ind_bi_ipsi)),
-#                           rep(3,2),
-#                           rep(4,1)))
-# colnames(df_plt) <- c('y','z','colcol')
-# gpl <- ggplot() +
-#   geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 20 ) +
-#   scale_colour_manual(values = col4,
-#                       breaks = c("1", "2", "3","4"),
-#                       labels = c("ref", "front", "bi", "ipsi") ) +
-#   guides(colour = guide_legend("groups") )+
-#   # scale_y_reverse() +
-#   # xlim(xrange) +
-#   # ylim(yrange) +
-#   coord_fixed(ratio = 1) +
-#   theme_minimal() +
-#   # theme_void() +
-#   # geom_segment(aes(x = 0, y = -0.5, xend = 1/ref_d[m]*1e3, yend = -0.5), size=2, lineend = "round") +
-#   # annotate("text", x = 0.05, y = -0.8, label = '1 um') +
-#   labs(title = m)
-# 
-# windows(record = F, width = 8, height = 8)
-# # pdf(file = paste(m, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-# gpl
-# 
-# dev.off()
-
-
-
 # Figure 7E, cross section, 
-
 j <- 20
 
 ii <- o_xyz_m[,1] > (range_x[1] + (j-1)*2*dL) & o_xyz_m[,1] < (range_x[1] + (j)*2*dL)
-# ii <- o_xyz_m[,1] < (range_x[2] - (j-1)*2*dL) & o_xyz_m[,1] > (range_x[2] - (j)*2*dL)
 o_xyz <- colMeans(o_xyz_m[ii,])
 d1 <- (o_xyz + xp*dL) %*% xp #distance to plane
 d2 <- (o_xyz - xp*dL) %*% xp #distance to plane
@@ -1388,7 +1220,6 @@ ii <- pointsinside(xyzmatrix(neu_target_rs[[it]]$d), surf=glo.msh, rval='logical
 xyz_m <- xyzmatrix(neu_target_rs[[it]]$d)[ii,]
 xyz_m_ind <- apply(xyz_m, 1, function(x) (x %*% xp - d1)*(x %*% xp - d2) < 0 )
 xyz_m_in <- xyz_m[xyz_m_ind,,drop=F]
-# xyz <- colMeans(xyz_m[xyz_m_ind,]) 
 pt_yz_k <- matrix(NA, ncol = 2, nrow = nrow(xyz_m_in) )
 for (k in 1:nrow(pt_yz_k)) {
   xyz <- xyz_m_in[k,]
@@ -1442,15 +1273,10 @@ i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
 for (j in 1:length(xy_poly)) {
   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
   if (j %in% ind_bi_ipsi_front) {
-    # geom_point(data = df_plt, aes(x=y, y=z, colour = colcol), size = 9, shape = 18 )
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4[4], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i1i, pos = 1, offset = 0.3)
-    # i1i <- i1i + 1
   }
   else if (j %in% ind_bi_ipsi_lat) {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col=col4[2], cex = 3, pch = 16)
-    # text(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], labels = i3i, pos = 1, offset = 0.3)
-    # i3i <- i3i + 1
   }
   else {
     points(xy_com[[j]][c('phi_deg')], xy_com[[j]][c('theta_deg')], col="grey", cex = 2, pch = 16) 
@@ -1478,12 +1304,8 @@ dev.off()
 
 # target neuite vs syn --------------------------------------------------------------------------------------------
 
-# break_x <- seq(340000, 450000, length.out = 23)
-
 nmb <- 16
 break_x <- seq(range_x[1] - 2*dL*nmb, range_x[2] + 2*dL*nmb, by = 2*dL*4)
-
-# break_x <- glo_div
 
 tar_syn_xbin <- matrix(ncol = 9, nrow = length(break_x)-1)
 for (j in 1:9) {
@@ -1496,7 +1318,6 @@ for (j in 1:nrow(tar_syn_xbin3)) {
   tar_syn_xbin3[j,] <- colMeans(tar_syn_xbin[j:(j+2),]) %>% round(.,1)
 }
 
-# tar_syn_xbin <- cbind(hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids, tar_syn_xbin)
 xx <- hist(conn_LC6_tar[[1]]$x, breaks = break_x, plot = F)$mids[2:(length(break_x)-2)]
 xx <- (xx - range_x[1]) / 2/dL
 xx <- xx[3:(length(xx)-2)]
@@ -1512,8 +1333,6 @@ dev.new()
 ggplot(dfm, aes(x=mid, y=value) ) + 
   geom_point(size = 3 ) +
   geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
-  # coord_cartesian(ylim = c(-.5, 1)) +
-  # theme_minimal_grid() +
   scale_colour_manual(values = pal_target, labels = target_names ) +
   scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0),limits = c(0,80)) +
   theme(panel.background = element_blank(), 
@@ -1559,8 +1378,6 @@ dev.new()
 ggplot(dfm, aes(x=mid, y=value) ) + 
   geom_point(size =3 ) +
   geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
-  # coord_cartesian(ylim = c(-.5, 1)) +
-  # theme_minimal_grid() +
   scale_colour_manual(values = pal_target, labels = target_names ) +
   scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0),limits = c(0,80)) +
   theme(panel.background = element_blank(), 
@@ -1593,10 +1410,7 @@ dev.new()
 ggplot(dfm, aes(x=mid, y=value) ) + 
   geom_point(size = 3 ) +
   geom_line(aes(colour = factor(variable), group = variable), lwd = 2) +
-  # coord_cartesian(ylim = c(-.5, 1)) +
-  # theme_minimal_grid() +
   scale_colour_manual(values = pal_target, labels = target_names ) +
-  # scale_x_continuous(breaks = seq(range_x[1],range_x[1]+80*2*dL, by=2*dL), limits = c(340000,450000),labels = tick_x, expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0,1, by=0.25), labels = seq(0,1, by=0.25), limits = c(0,1)) +
   scale_x_continuous(breaks = seq(0,80, by=1), labels = tick_x, expand = c(0,0), limits = c(0,80)) +
   theme(panel.background = element_blank(), 

@@ -233,7 +233,6 @@ for (k in 1:19) {
 df <- data.frame(cbind(seq(1,Nr*Nc), RI_12_rot))
 df <- data.frame(cbind(seq(1,Nr*Nc), RI_2D_rot))
 df <- data.frame(cbind(seq(1,Nr*Nc), RI_1D_x_rot))
-# df <- data.frame(cbind(seq(1,Nr*Nc), RI_1D_y_rot)) 
 df <- data.frame(cbind(seq(1,Nr*Nc), RI_12_rot_jitter))
 
 colnames(df) <- c('neu', seq(0,180,by = 10))

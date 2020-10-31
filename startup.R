@@ -176,99 +176,225 @@ sph2cartZ <- function(rtp){
 load("data/neurons_20200828.RData")
 load("data/neuropil_mesh.RData")
 
-# connections -----------------------------------------------------------------------------------------------------
 
-# - all the connectors on LC6
-neu <- LC6
-LC6_pre <- data.frame()
-LC6_post <- data.frame()
-conn_glo <- list()
-conn_pre <- list()
-conn_post <- list()
-for (j in 1:length(neu)) {
-  tar <- neu[[j]]
-  conn_glo[[j]] <- tar$connectors %>% 
-    as_tibble() %>%
-    mutate(glo = a*x + b*y + c*z + d) %>%
-    filter(glo < 0)
-  conn_pre[[j]] <- conn_glo[[j]] %>% 
-    filter(prepost == 0) %>%
-    select(treenode_id, connector_id, x, y, z) %>%
-    as.data.frame()
-  conn_post[[j]] <- conn_glo[[j]] %>% 
-    filter(prepost == 1) %>%
-    select(treenode_id, connector_id, x, y, z) %>%
-    as.data.frame()
-  LC6_pre <- rbind(LC6_pre, cbind(rep(j, dim(conn_pre[[j]])[1]),conn_pre[[j]]))
-  LC6_post <- rbind(LC6_post, cbind(rep(j, dim(conn_post[[j]])[1]),conn_post[[j]]))
-}
-colnames(LC6_pre)[1] <- "ID"
-colnames(LC6_post)[1] <- "ID"
+# load EM data ------------------------------------------------------------
+
+# here you can either load the EM data 
+load("data/EM_data.RData")
+# or run this following 2 blocks of code, which requires access to CATMAID
 
 
-# - betw LC6
-if (exists("LC6LC6")) {
-  rm(LC6LC6)
-}
-for (j in 1:length(neu)) {
-  for (k in 1:length(neu)) {
-    cft <- catmaid_get_connectors_between(pre_skids = neu[[j]]$skid, post_skids = neu[[k]]$skid)
-    if (!is.null(cft)) {
-      cft_nrow <- dim(cft)[1]
-      cft_comb <- cbind(rep(j,cft_nrow), rep(k,cft_nrow), cft[,1:8])
-      if (exists("LC6LC6")) {
-        LC6LC6 <- rbind(LC6LC6,cft_comb)
-      } else {
-        LC6LC6 <- cft_comb
-      }
-    }
-  }
-}
-LC6LC6 <- as_tibble(LC6LC6) %>%
-  mutate(glo = a*x + b*y + c*z + d) %>%
-  filter(glo < 0) %>%
-  select(-glo) %>%
-  as.data.frame()
-colnames(LC6LC6) <- c('pre_ind','post_ind','pre_skid','post_skid','conn_id','pre_node_id','post_node_id','x','y','z')
-rownames(LC6LC6) <- seq(1,dim(LC6LC6)[1])
-
-# - look at pairwise distance vs pairwise connection
-a1 = -0.6; b1 = 1; c1 = 1.3; d1 = -200000 #separate LO and glomerulus
-dist_Nconn <- matrix(ncol = 7, nrow = 0) #pairwise dist and connections
-for (j in 1:(length(conn_pre)-1)) {
-  for (k in (j+1):length(conn_pre)) {
-    dist_d <- dist(rbind(xyz_com[[j]], xyz_com[[k]]))
-    conn_fromto <- catmaid_get_connectors_between(pre_skids = neu[[j]]$skid, post_skids = neu[[k]]$skid)
-    if (is.null(conn_fromto)) {
-      fromto_LO <- 0
-      fromto_glo <- 0
-    } else {
-      mat_conn <- data.matrix(conn_fromto[,c("connector_x", "connector_y", "connector_z")])
-      fromto_LO <- sum(mat_conn %*% c(a1,b1,c1) + d1 > 0)
-      fromto_glo <- dim(conn_fromto)[1] - fromto_LO
-    }
-    conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu[[j]]$skid)
-    if (is.null(conn_tofrom)) {
-      tofrom_LO <- 0
-      tofrom_glo <- 0
-    } else {
-      mat_conn <- data.matrix(conn_tofrom[,c("connector_x", "connector_y", "connector_z")])
-      tofrom_LO <- sum(mat_conn %*% c(a1,b1,c1) + d1 > 0)
-      tofrom_glo <- dim(conn_tofrom)[1] - tofrom_LO
-    }
-    dist_Nconn_tmp <- matrix(c(j,k,dist_d, fromto_LO, fromto_glo, tofrom_LO, tofrom_glo), nrow = 1)
-    dist_Nconn <- rbind(dist_Nconn, dist_Nconn_tmp)
-  }
-}
-colnames(dist_Nconn) <- c("from","to","dist_com","fromto_LO","fromto_glo","tofrom_LO","tofrom_glo")
-dist_Nconn %<>% 
-  as_tibble() %>%
-  mutate(Nconn_glo = tofrom_glo + fromto_glo) %>%
-  as.data.frame()
-colSums(dist_Nconn)
-dist_com_mean <- mean(dist_Nconn$dist_com)
-Nconn_glo_tot <- sum(dist_Nconn$Nconn_glo)
-
+# # EM data 1, connections -----------------------------------------------------------------------------------------------------
+# 
+# # define a plane separating lobula portion of the LC6
+# a = -0.6; b = 1; c = 1.3; d = -230000
+# 
+# # - all the connectors on LC6
+# neu <- LC6
+# LC6_pre <- data.frame()
+# LC6_post <- data.frame()
+# conn_glo <- list()
+# conn_pre <- list()
+# conn_post <- list()
+# for (j in 1:length(neu)) {
+#   tar <- neu[[j]]
+#   conn_glo[[j]] <- tar$connectors %>% 
+#     as_tibble() %>%
+#     mutate(glo = a*x + b*y + c*z + d) %>%
+#     filter(glo < 0)
+#   conn_pre[[j]] <- conn_glo[[j]] %>% 
+#     filter(prepost == 0) %>%
+#     select(treenode_id, connector_id, x, y, z) %>%
+#     as.data.frame()
+#   conn_post[[j]] <- conn_glo[[j]] %>% 
+#     filter(prepost == 1) %>%
+#     select(treenode_id, connector_id, x, y, z) %>%
+#     as.data.frame()
+#   LC6_pre <- rbind(LC6_pre, cbind(rep(j, dim(conn_pre[[j]])[1]),conn_pre[[j]]))
+#   LC6_post <- rbind(LC6_post, cbind(rep(j, dim(conn_post[[j]])[1]),conn_post[[j]]))
+# }
+# colnames(LC6_pre)[1] <- "ID"
+# colnames(LC6_post)[1] <- "ID"
+# 
+# 
+# # - betw LC6
+# if (exists("LC6LC6")) {
+#   rm(LC6LC6)
+# }
+# for (j in 1:length(neu)) {
+#   for (k in 1:length(neu)) {
+#     cft <- catmaid_get_connectors_between(pre_skids = neu[[j]]$skid, post_skids = neu[[k]]$skid)
+#     if (!is.null(cft)) {
+#       cft_nrow <- dim(cft)[1]
+#       cft_comb <- cbind(rep(j,cft_nrow), rep(k,cft_nrow), cft[,1:8])
+#       if (exists("LC6LC6")) {
+#         LC6LC6 <- rbind(LC6LC6,cft_comb)
+#       } else {
+#         LC6LC6 <- cft_comb
+#       }
+#     }
+#   }
+# }
+# colnames(LC6LC6) <- c('pre_ind','post_ind','pre_skid','post_skid','conn_id','pre_node_id','post_node_id','x','y','z')
+# rownames(LC6LC6) <- seq(1,dim(LC6LC6)[1])
+# LC6LC6 <- as_tibble(LC6LC6) %>%
+#   mutate(glo = a*x + b*y + c*z + d) %>%
+#   filter(glo < 0) %>%
+#   select(-glo) %>%
+#   as.data.frame()
+# 
+# 
+# # - look at pairwise distance vs pairwise connection
+# 
+# xyz_com <- list() # center-of-mass
+# for (j in 1:length(neu)){
+#   tar <- neu[[j]]
+#   xyz_ep <-  tar$d[tar$EndPoints, ] %>% 
+#     xyzmatrix() %>%
+#     as_tibble() %>% 
+#     mutate(LO = a*X + b*Y + c*Z + d) %>%
+#     filter(LO > 0) %>%
+#     select(X,Y,Z) %>%
+#     data.matrix()
+#   xyz_bp <-  tar$d[tar$BranchPoints, ] %>% 
+#     xyzmatrix() %>%
+#     as_tibble() %>% 
+#     mutate(LO = a*X + b*Y + c*Z + d) %>%
+#     filter(LO > 0) %>%
+#     select(X,Y,Z) %>%
+#     data.matrix()
+#   
+#   # center-of-mass
+#   xyz_eb <- rbind(xyz_ep,xyz_bp)
+#   xyz_com[[j]] <- colSums(xyz_eb)/dim(xyz_eb)[1]
+# }
+# 
+# a1 = -0.6; b1 = 1; c1 = 1.3; d1 = -200000 #separate LO and glomerulus
+# dist_Nconn <- matrix(ncol = 7, nrow = 0) #pairwise dist and connections
+# for (j in 1:(length(conn_pre)-1)) {
+#   for (k in (j+1):length(conn_pre)) {
+#     dist_d <- dist(rbind(xyz_com[[j]], xyz_com[[k]]))
+#     conn_fromto <- catmaid_get_connectors_between(pre_skids = neu[[j]]$skid, post_skids = neu[[k]]$skid)
+#     if (is.null(conn_fromto)) {
+#       fromto_LO <- 0
+#       fromto_glo <- 0
+#     } else {
+#       mat_conn <- data.matrix(conn_fromto[,c("connector_x", "connector_y", "connector_z")])
+#       fromto_LO <- sum(mat_conn %*% c(a1,b1,c1) + d1 > 0)
+#       fromto_glo <- dim(conn_fromto)[1] - fromto_LO
+#     }
+#     conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu[[j]]$skid)
+#     if (is.null(conn_tofrom)) {
+#       tofrom_LO <- 0
+#       tofrom_glo <- 0
+#     } else {
+#       mat_conn <- data.matrix(conn_tofrom[,c("connector_x", "connector_y", "connector_z")])
+#       tofrom_LO <- sum(mat_conn %*% c(a1,b1,c1) + d1 > 0)
+#       tofrom_glo <- dim(conn_tofrom)[1] - tofrom_LO
+#     }
+#     dist_Nconn_tmp <- matrix(c(j,k,dist_d, fromto_LO, fromto_glo, tofrom_LO, tofrom_glo), nrow = 1)
+#     dist_Nconn <- rbind(dist_Nconn, dist_Nconn_tmp)
+#   }
+# }
+# colnames(dist_Nconn) <- c("from","to","dist_com","fromto_LO","fromto_glo","tofrom_LO","tofrom_glo")
+# dist_Nconn %<>% 
+#   as_tibble() %>%
+#   mutate(Nconn_glo = tofrom_glo + fromto_glo) %>%
+#   as.data.frame()
+# colSums(dist_Nconn)
+# dist_com_mean <- mean(dist_Nconn$dist_com)
+# Nconn_glo_tot <- sum(dist_Nconn$Nconn_glo)
+# 
+# 
+# # EM data 2,  target connection -----------------------------------------------------------------------------------------------------
+# 
+# a1 = -0.6; b1 = 1; c1 = 1.3; d1 = -200000 #separate LO and glomerulus
+# conn_target <- list()
+# for (j in 1:length(neu_target)) {
+#   tb_conn <- matrix(ncol = 7)
+#   for (k in 1:length(neu)) {
+#     conn_fromto <- catmaid_get_connectors_between(pre_skids = neu_target[[j]]$skid, post_skids = neu[[k]]$skid)
+#     if (is.null(conn_fromto)) {
+#       fromto_LO <- 0
+#       fromto_glo <- 0
+#     } else {
+#       mat_conn <- data.matrix(conn_fromto[, c("connector_x", "connector_y", "connector_z")])
+#       fromto_LO <- sum(mat_conn %*% c(a1, b1, c1) + d1 > 0)
+#       fromto_glo <- dim(conn_fromto)[1] - fromto_LO
+#     }
+#     conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu_target[[j]]$skid)
+#     if (is.null(conn_tofrom)) {
+#       tofrom_LO <- 0
+#       tofrom_glo <- 0
+#     } else {
+#       mat_conn <- data.matrix(conn_tofrom[, c("connector_x", "connector_y", "connector_z")])
+#       tofrom_LO <- sum(mat_conn %*% c(a1, b1, c1) + d1 > 0)
+#       tofrom_glo <- dim(conn_tofrom)[1] - tofrom_LO
+#     }
+#     Nconn_glo <- fromto_glo + tofrom_glo
+#     tb_conn_tmp <- matrix(c(j, k, fromto_LO, fromto_glo, tofrom_LO, tofrom_glo, Nconn_glo), nrow = 1)
+#     tb_conn <- rbind(tb_conn, tb_conn_tmp)
+#   }
+#   conn_target[[j]] <- as.data.frame(tb_conn[-1,])
+#   colnames(conn_target[[j]]) <- c("target","LC6","fromto_LO","fromto_glo","tofrom_LO","tofrom_glo", "Nconn_glo")
+# }
+# 
+# conn_tt <- matrix(ncol = length(neu_target), nrow = length(neu_target)) #target to target
+# for (j in 1:length(neu_target)) {
+#   for (k in 1:length(neu_target)) {
+#     conn_fromto <- catmaid_get_connectors_between(pre_skids = neu_target[[j]]$skid, post_skids = neu_target[[k]]$skid)
+#     if (!is.null(conn_fromto)) {
+#       mat_conn <- data.matrix(conn_fromto[, c("connector_x", "connector_y", "connector_z")])
+#       fromto <- dim(conn_fromto)[1]
+#       conn_tt[j,k] <- fromto
+#     }
+#   }
+# }
+# 
+# 
+# # - LC6 and target
+# conn_LC6_tar <- list()
+# LC6_wt <- list() #neuron skid with synapse weight in each division for each target
+# for (j in 1:length(neu_target)) {
+#   tmp <- matrix(ncol = 4)
+#   for (k in 1:length(neu)) {
+#     tmp2 <- matrix(ncol = 3)
+#     conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu_target[[j]]$skid)
+#     if (!is.null(conn_tofrom)) {
+#       tmp2 <- rbind(tmp2, data.matrix(conn_tofrom[, c("connector_x", "connector_y", "connector_z")]))
+#     }
+#     if (dim(tmp2)[1] == 2) {
+#       tmp <- rbind(tmp, c(rep(k,dim(tmp2)[1]-1), tmp2[-1,]))
+#     } else {
+#       tmp <- rbind(tmp, cbind(rep(k,dim(tmp2)[1]-1), tmp2[-1,]))
+#     }
+#   }
+#   tmp <- tmp[-1,] %>%
+#     as_tibble() %>%
+#     mutate(gp_x = 0)
+#   colnames(tmp) <- c("ID", "x","y","z","gp_x")
+#   
+#   for (k in 1:(length(glo_div)-1)) {
+#     tmp %<>% as_tibble() %>%
+#       mutate(gp_x = gp_x + (x>glo_div[k]))
+#   }
+#   
+#   ID_wt <- list() #neuron skid with synapse weight in each division
+#   for (k in 1:length(glo_div)) {
+#     df_tmp <- tmp %>%
+#       filter(gp_x == k) %>%
+#       transmute(ID) %>%
+#       data.frame()
+#     mat_tmp <- matrix(ncol = 2, nrow = length(neu))
+#     for (m in 1:length(neu)) {
+#       mat_tmp[m,] <- c(m, sum(df_tmp$ID %in% m))  
+#     }
+#     ID_wt[[k]] <- mat_tmp
+#   }
+#   
+#   conn_LC6_tar[[j]] <- as.data.frame(tmp)
+#   LC6_wt[[j]] <- ID_wt
+# }
 
 # glo sectors and mesh,  glo LC6 --------------------------------------------------------------------------------------------
 
@@ -292,97 +418,6 @@ LC6_glo <- nlapply(LC6, subset, function(x) pointsinside(x, surf=glo.msh, rval='
 
 # resample
 LC6_glo_rs <- resample(LC6_glo, stepsize = 400)
-
-
-#  target syn -----------------------------------------------------------------------------------------------------
-
-a1 = -0.6; b1 = 1; c1 = 1.3; d1 = -200000 #separate LO and glomerulus
-conn_target <- list()
-for (j in 1:length(neu_target)) {
-  tb_conn <- matrix(ncol = 7)
-  for (k in 1:length(neu)) {
-    conn_fromto <- catmaid_get_connectors_between(pre_skids = neu_target[[j]]$skid, post_skids = neu[[k]]$skid)
-    if (is.null(conn_fromto)) {
-      fromto_LO <- 0
-      fromto_glo <- 0
-    } else {
-      mat_conn <- data.matrix(conn_fromto[, c("connector_x", "connector_y", "connector_z")])
-      fromto_LO <- sum(mat_conn %*% c(a1, b1, c1) + d1 > 0)
-      fromto_glo <- dim(conn_fromto)[1] - fromto_LO
-    }
-    conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu_target[[j]]$skid)
-    if (is.null(conn_tofrom)) {
-      tofrom_LO <- 0
-      tofrom_glo <- 0
-    } else {
-      mat_conn <- data.matrix(conn_tofrom[, c("connector_x", "connector_y", "connector_z")])
-      tofrom_LO <- sum(mat_conn %*% c(a1, b1, c1) + d1 > 0)
-      tofrom_glo <- dim(conn_tofrom)[1] - tofrom_LO
-    }
-    Nconn_glo <- fromto_glo + tofrom_glo
-    tb_conn_tmp <- matrix(c(j, k, fromto_LO, fromto_glo, tofrom_LO, tofrom_glo, Nconn_glo), nrow = 1)
-    tb_conn <- rbind(tb_conn, tb_conn_tmp)
-  }
-  conn_target[[j]] <- as.data.frame(tb_conn[-1,])
-  colnames(conn_target[[j]]) <- c("target","LC6","fromto_LO","fromto_glo","tofrom_LO","tofrom_glo", "Nconn_glo")
-}
-
-conn_tt <- matrix(ncol = length(neu_target), nrow = length(neu_target)) #target to target
-for (j in 1:length(neu_target)) {
-  for (k in 1:length(neu_target)) {
-    conn_fromto <- catmaid_get_connectors_between(pre_skids = neu_target[[j]]$skid, post_skids = neu_target[[k]]$skid)
-    if (!is.null(conn_fromto)) {
-      mat_conn <- data.matrix(conn_fromto[, c("connector_x", "connector_y", "connector_z")])
-      fromto <- dim(conn_fromto)[1]
-      conn_tt[j,k] <- fromto
-    }
-  }
-}
-
-
-# - LC6 and target
-conn_LC6_tar <- list()
-LC6_wt <- list() #neuron skid with synapse weight in each division for each target
-for (j in 1:length(neu_target)) {
-  tmp <- matrix(ncol = 4)
-  for (k in 1:length(neu)) {
-    tmp2 <- matrix(ncol = 3)
-    conn_tofrom <- catmaid_get_connectors_between(pre_skids = neu[[k]]$skid, post_skids = neu_target[[j]]$skid)
-    if (!is.null(conn_tofrom)) {
-      tmp2 <- rbind(tmp2, data.matrix(conn_tofrom[, c("connector_x", "connector_y", "connector_z")]))
-    }
-    if (dim(tmp2)[1] == 2) {
-      tmp <- rbind(tmp, c(rep(k,dim(tmp2)[1]-1), tmp2[-1,]))
-    } else {
-      tmp <- rbind(tmp, cbind(rep(k,dim(tmp2)[1]-1), tmp2[-1,]))
-    }
-  }
-  tmp <- tmp[-1,] %>%
-    as_tibble() %>%
-    mutate(gp_x = 0)
-  colnames(tmp) <- c("ID", "x","y","z","gp_x")
-  
-  for (k in 1:(length(glo_div)-1)) {
-    tmp %<>% as_tibble() %>%
-      mutate(gp_x = gp_x + (x>glo_div[k]))
-  }
-  
-  ID_wt <- list() #neuron skid with synapse weight in each division
-  for (k in 1:length(glo_div)) {
-    df_tmp <- tmp %>%
-      filter(gp_x == k) %>%
-      transmute(ID) %>%
-      data.frame()
-    mat_tmp <- matrix(ncol = 2, nrow = length(neu))
-    for (m in 1:length(neu)) {
-      mat_tmp[m,] <- c(m, sum(df_tmp$ID %in% m))  
-    }
-    ID_wt[[k]] <- mat_tmp
-  }
-  
-  conn_LC6_tar[[j]] <- as.data.frame(tmp)
-  LC6_wt[[j]] <- ID_wt
-}
 
 
 

@@ -1,27 +1,6 @@
-# connectivity matrix
+# make connectivity matrix
 
-library(stats)
-library(spatstat)
-library(natverse)
-library(knitr)
-library(plyr)
-library(ggplot2)
-library(igraph)
-library(RColorBrewer)
-
-
-setwd("./") # set to this code's directory
-
-# clean everythign up.  
-rm(list=ls())
-
-#close any open rgl windows
-while (rgl.cur() > 0) { rgl.close() }
-
-# set up for 3d plots based on rgl package
-rgl::setupKnitr()
-
-load("LC6_Analysis_connMatrix_data.RData")
+load("data/LC6_Analysis_connMatrix_data.RData")
 
 
 # Table S1 ,conn matrix -------------------------------------------------------------------------------------------
