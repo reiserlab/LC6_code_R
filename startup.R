@@ -7,7 +7,7 @@
 #    "LC6_proc.R", "RI.R" and "LC6_Analysis_connMatrix.R" can be run independently.
 #    "target_proc.R" requires running "LC6_proc.R" first or loading the workspace (see beginning block)
 # 3/ search for, eg., "Figure 5B" or "Figure 5S1A" for a figure in the paper
-#    then run the code within that block
+#    then run the code within that block.
 
 
 #  load libraries and startup -----------------------------------------------------------------------------------------
