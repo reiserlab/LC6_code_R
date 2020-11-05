@@ -1,6 +1,13 @@
 # LC6 downstream neurons analysis
 
-# - target color
+
+# load workspace ----------------------------------------------------------
+
+# load("data/LC6_proc_data.RData")
+
+
+# color palette -----------------------------------------------------------
+
 pal_target <- pnw_palette("Bay",9)
 pal_target_a <- adjustcolor(pal_target, alpha.f = 0.6)
 
@@ -150,7 +157,7 @@ plvl[[2]]
 
 # target neurons syn histo glo  ---------------------------------------------------------------------------
 
-N_gp <- 11
+# N_gp <- 11
 
 # combine conn data
 conn_LC6_tar_bi <- rbind(conn_LC6_tar[[1]], conn_LC6_tar[[2]], conn_LC6_tar[[3]], conn_LC6_tar[[4]])
@@ -168,24 +175,25 @@ plot3d(neu_target[[6]], col = 'pink', alpha = 0.7)
 points3d(conn_LC6_tar[[6]][,c('x','y','z')], col = 'red')
 
 
-# histogram of num of synp in each compartment
-LC6_ipsi_dol <- matrix(ncol = 5, nrow = 10)
-for (j in 1:5) {
-  for (k in 1:10) {
-    LC6_ipsi_dol[k,j] <- sum(LC6_wt[[4+j]][[k]][,2])
-  }
-}
-
-
-# Figure S8B, bar plot -- obsolete
-num_tot <- colSums(LC6_ipsi_dol)
-for (j in 1:5) {
-  LC6_ipsi_dol[,j] <- LC6_ipsi_dol[,j]/num_tot[j]
-}
-dev.new()
-barplot(LC6_ipsi_dol[,c(3,2,4,5,1)], main = 'LC6 to ipsi in dolphin compartments', ylim = c(-0.1, 1.2), col = dolphin_col )
-text(x = seq(0.7,5.5, length.out = 5), y = rep(1.1,5), labels = num_tot[c(3,2,4,5,1)])
-text(x = seq(0.7,5.5, length.out = 5), y = rep(-0.05,5), labels = ipsi_skid[c(3,2,4,5,1)])
+# NOT used
+# # histogram of num of synp in each compartment
+# LC6_ipsi_dol <- matrix(ncol = 5, nrow = 10)
+# for (j in 1:5) {
+#   for (k in 1:10) {
+#     LC6_ipsi_dol[k,j] <- sum(LC6_wt[[4+j]][[k]][,2])
+#   }
+# }
+# 
+#
+# # Figure , bar plot
+# num_tot <- colSums(LC6_ipsi_dol)
+# for (j in 1:5) {
+#   LC6_ipsi_dol[,j] <- LC6_ipsi_dol[,j]/num_tot[j]
+# }
+# dev.new()
+# barplot(LC6_ipsi_dol[,c(3,2,4,5,1)], main = 'LC6 to ipsi in dolphin compartments', ylim = c(-0.1, 1.2), col = dolphin_col )
+# text(x = seq(0.7,5.5, length.out = 5), y = rep(1.1,5), labels = num_tot[c(3,2,4,5,1)])
+# text(x = seq(0.7,5.5, length.out = 5), y = rep(-0.05,5), labels = ipsi_skid[c(3,2,4,5,1)])
 
 
 
@@ -408,13 +416,13 @@ par3d('windowRect' = c(100,100,1100,1100))
 shade3d(v14, alpha=0.05)
 shade3d(glo_vol, col= "gold", alpha = 0.5)
 rgl.viewpoint(userMatrix = rotationMatrix(1*90/180*pi+pi/2,1,0,0) %*% rotationMatrix(0,0,1,0), zoom = 0.7)
-tar <- neu_biL[[1]]
+tar <- neu_target[[1]]
 plot3d(tar, lwd = 2, col = "blue")
 points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = "blue", size = 20)
-tar <- neu_biR[[1]]
+tar <- neu_target[[3]]
 plot3d(tar, lwd = 2, col = "red")
 points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = "red", size = 20)
-tar <- neu_ipsi[[1]]
+tar <- neu_target[[5]]
 plot3d(tar, lwd = 2, col = "cyan")
 points3d(xyzmatrix(tar$d[match(tar$tags$soma, tar$d$PointNo), ]), col = "cyan", size = 20)
 
@@ -483,7 +491,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
   min(na.omit(c(mai_mean))) / amp_max
   
   # t-test
-  # mu_test <- sum(exp_raw[[j]][ind_mai[c(12,13,14,27,28,42,56)], stim_start:stim_end, ]) / 7 / dim(exp_raw[[j]])[3]
   mu_test <- sum(exp_raw[[j]][ind_mai[c(13,14,28,42)], stim_start:stim_end, ]) / 4 / dim(exp_raw[[j]])[3]
   pval_tmp <- c()
   for (k in 1:dim(exp_raw[[j]])[1]) {
@@ -497,7 +504,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
   loess_fit <- predict (exp_loess, xygrid4, se = T)
   exp_interp <- cbind(xygrid4, melt(loess_fit$fit)$value)
   colnames(exp_interp) <- c('x','y','z')
-  # exp_interp <- exp_interp[!is.na(exp_interp[,'z']), ] #why need this?
   
   grid_Gaussian <- as.data.frame(bd_grid[ii_inpoly == 1,])
   grid_Gaussian$Z = 0
@@ -620,7 +626,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
   
   plvl_ol[[j]] <- ggplot()
   plvl_ol_em[[j]] <- ggplot() +
-    # geom_polygon(data = shim_xy, aes(x,y), fill = 'black', alpha = 0.3) +
     geom_raster(data = simdata_df_diff, aes(x, y, z = z, fill = equalSpace), interpolate = F) +
     scale_fill_manual(values = pal_tar) +
     geom_path(data = xy_bd_chull_df, aes(x = phi_deg, y = theta_deg), colour = 'black',  inherit.aes = FALSE)
@@ -629,10 +634,8 @@ for (j in 1:length(conn_target_agglo_sum)) {
     df <- data.frame(x = seq(1,dim(mai_mean)[2])/200*6 + loom_phi[k]-4.5, y = mai_mean[ind_mai[k],]*(-6) + loom_theta[k]+4.5)
     if (fdr[[j]][ind_mai[k]] >= 0.05 ) {
       plvl_ol[[j]] <- plvl_ol[[j]] + geom_line(df, mapping = aes(x,y), colour = 'black', alpha = 0.3, lwd = 1)
-      # plvl_ol_em[[j]] <- plvl_ol_em[[j]] + geom_line(df, mapping = aes(x,y), colour = 'black', alpha = 0.3, lwd = 1)
     } else {
       plvl_ol[[j]] <- plvl_ol[[j]] + geom_line(df, mapping = aes(x,y), colour = 'black', lwd = 1)
-      # plvl_ol_em[[j]] <- plvl_ol_em[[j]] + geom_line(df, mapping = aes(x,y), colour = 'black', lwd = 1)
     }
   }
   plvl_ol[[j]] <- plvl_ol[[j]] + labs(title = paste("Target ipsi exp vs", mat_names[j], ", 70%", "N=",sum(conn_target_agglo_sum[[j]][,"tofrom_glo"]),sep = " ")) +
@@ -649,7 +652,6 @@ for (j in 1:length(conn_target_agglo_sum)) {
     theme_void() +
     coord_fixed(ratio = 1)
   
-  # for (j in 1:length(conn_target_agglo_sum)) { 
   
   # -- fly indiv
   for (k in 1:dim(exp_raw[[j]])[3]) {
@@ -759,7 +761,7 @@ for (j in 1:length(conn_target_agglo_sum)) {
 
 
 
-# -- Figure S3C, ephys contour overlay t-series
+# -- Figure 3S1C, ephys contour overlay t-series
 windows(record = F, width = 8, height = 8)
 plvl_bi[[1]] 
 windows(record = F, width = 8, height = 8)
@@ -785,34 +787,32 @@ windows(record = F, width = 8, height = 8)
 plvl_ipsi[[7]]
 
 
-# -- Figure S3 , ephys contours
-for (k in 1:4) {
-  pdf(file = paste("ephys_bi_contour_", k, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-  print(plvl_bi_ct[[k]])
-  dev.off()
-}
-for (k in 1:7) {
-  pdf(file = paste("ephys_ipsi_contour_", k, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-  print(plvl_ipsi_ct[[k]] )
-  dev.off()
-}
+# # -- Figure 3S1C, save to pdf
+# for (k in 1:4) {
+#   pdf(file = paste("ephys_bi_contour_", k, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+#   print(plvl_bi_ct[[k]])
+#   dev.off()
+# }
+# for (k in 1:7) {
+#   pdf(file = paste("ephys_ipsi_contour_", k, ".pdf",sep = ''), width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
+#   print(plvl_ipsi_ct[[k]] )
+#   dev.off()
+# }
 
-# windows(record = F, width = 8, height = 8)
-# plvl_bi_ct[[1]] 
 
-# -- Figure 3D alt
+# -- Figure 3C 
 windows(record = F, width = 8, height = 8)
 plvl_ol[[1]] 
 windows(record = F, width = 8, height = 8)
 plvl_ol[[2]] 
 
-# -- Figure S7, bi - ipsi, indiv exp
-windows(record = F, width = 8, height = 8)
-plvl_ol_em[[1]] 
-windows(record = F, width = 8, height = 8)
-plvl_ol_em[[2]] 
+# # -- Figure 7S2, bi - ipsi, indiv exp
+# windows(record = F, width = 8, height = 8)
+# plvl_ol_em[[1]] 
+# windows(record = F, width = 8, height = 8)
+# plvl_ol_em[[2]] 
 
-# -- Figure 6D alt
+# -- Figure 7D alt
 # contour map + exp contour
 windows(record = F, width = 8, height = 8)
 plvl_ol[[1]] + geom_contour(data = simdata_df[[1]], aes(x,y,z=z), breaks = c(0.71), color = "blue", alpha = 1, lwd = 2)
@@ -823,62 +823,62 @@ plvl_ol[[2]] + geom_contour(data = simdata_df[[2]], aes(x,y,z=z), breaks = c(0.7
 
 
 
-#  exp and EM overlap ---------------------------------------------------------------------------------------------
+# #  exp and EM overlap, NOT used --------------------------------------------------------------------------------------
+# 
+# # polygon from EM
+# simdata_ct <- list()
+# simdata_poly <- list()
+# for (j in 1:2) {
+#   simdata_ct[[j]] <- simdata_df[[j]][simdata_df[[j]]$z > 0.71, 1:2]
+#   ash <- ashape(simdata_ct[[j]]+matrix(runif(dim(simdata_ct[[j]])[1]*2, 1e-9, 2e-9), ncol = 2), alpha = 5)
+#   simdata_poly[[j]] <- mkpoly(ash$edges)[[1]][,3:4]
+# }
+# 
+# 
+# # polygon from exp
+# exp_raw <- list(expBi3, expIpsi3)
+# stim_end <- 200 # loom during the first 150 points, 4 sec
+# stim_start <- 50
+# ol_ratio <- matrix(ncol = 2, nrow = 2*(4+7)) # percentage of overlap = intersection / union, bi-biEM, ipsi-biEM, etc
+# 
+# NN <- 1
+# for (jem in 1:2) {
+#   for (j in 1:2) {
+#     for (k in 1:dim(exp_raw[[j]])[3]) {
+#       exp_df <- data.frame(xygrid2, rowSums(exp_raw[[j]][ind_mai, stim_start:stim_end, k]))
+#       colnames(exp_df) <- c("x","y","z")
+#       exp_loess <- loess (z ~ x * y, exp_df, degree = 2, span = 0.3)
+#       loess_fit <- predict (exp_loess, xygrid4, se = T)
+#       exp_interp <- cbind(xygrid4, melt(loess_fit$fit)$value)
+#       colnames(exp_interp) <- c('x','y','z')
+#       exp_interp <- exp_interp[!is.na(exp_interp[,'z']), ]
+#       
+#       exp_interp_ct <- exp_interp[(exp_interp$z > 0.61*max(exp_interp$z)),]
+#       
+#       N_in <- sp::point.in.polygon(exp_interp_ct[,1], exp_interp_ct[,2], simdata_poly[[jem]][,1], simdata_poly[[jem]][,2])
+#       N_in <- sum(N_in)
+#       N_out <- dim(exp_interp_ct)[1] - N_in
+#       N_em <- sum(simdata_ct[[jem]]$y >= 54 | simdata_ct[[jem]]$y <= 108)
+#       ol_ratio[NN,] <- c(j + 2*(jem %/% 2), N_in / (N_out + N_em))
+#       NN <- NN + 1
+#     }
+#   }
+# }
+# 
+# ol_ratio <- as.data.frame(ol_ratio)
+# colnames(ol_ratio) <- c('pair', 'ratio')
+# 
+# 
+# windows(record = F, width = 8, height = 8)
+# ggplot(ol_ratio, aes(x = pair, group = pair, y = ratio)) + 
+#   geom_dotplot(binaxis='y', stackdir='center', dotsize = 1) +
+#   stat_summary(fun.data="mean_sdl", fun.args = list(mult=1), geom="crossbar", width=0.5) +
+#   scale_x_continuous(breaks=c(1,2,3,4), labels=c("bi-biEM", "ipsi-biEM", "bi-ipsiEM", "ipsi-ipsiEM"))+
+#   theme_bw()
 
-# polygon from EM
-simdata_ct <- list()
-simdata_poly <- list()
-for (j in 1:2) {
-  simdata_ct[[j]] <- simdata_df[[j]][simdata_df[[j]]$z > 0.71, 1:2]
-  ash <- ashape(simdata_ct[[j]]+matrix(runif(dim(simdata_ct[[j]])[1]*2, 1e-9, 2e-9), ncol = 2), alpha = 5)
-  simdata_poly[[j]] <- mkpoly(ash$edges)[[1]][,3:4]
-}
 
 
-# polygon from exp
-exp_raw <- list(expBi3, expIpsi3)
-stim_end <- 200 # loom during the first 150 points, 4 sec
-stim_start <- 50
-ol_ratio <- matrix(ncol = 2, nrow = 2*(4+7)) # percentage of overlap = intersection / union, bi-biEM, ipsi-biEM, etc
-
-NN <- 1
-for (jem in 1:2) {
-  for (j in 1:2) {
-    for (k in 1:dim(exp_raw[[j]])[3]) {
-      exp_df <- data.frame(xygrid2, rowSums(exp_raw[[j]][ind_mai, stim_start:stim_end, k]))
-      colnames(exp_df) <- c("x","y","z")
-      exp_loess <- loess (z ~ x * y, exp_df, degree = 2, span = 0.3)
-      loess_fit <- predict (exp_loess, xygrid4, se = T)
-      exp_interp <- cbind(xygrid4, melt(loess_fit$fit)$value)
-      colnames(exp_interp) <- c('x','y','z')
-      exp_interp <- exp_interp[!is.na(exp_interp[,'z']), ]
-      
-      exp_interp_ct <- exp_interp[(exp_interp$z > 0.61*max(exp_interp$z)),]
-      
-      N_in <- sp::point.in.polygon(exp_interp_ct[,1], exp_interp_ct[,2], simdata_poly[[jem]][,1], simdata_poly[[jem]][,2])
-      N_in <- sum(N_in)
-      N_out <- dim(exp_interp_ct)[1] - N_in
-      N_em <- sum(simdata_ct[[jem]]$y >= 54 | simdata_ct[[jem]]$y <= 108)
-      ol_ratio[NN,] <- c(j + 2*(jem %/% 2), N_in / (N_out + N_em))
-      NN <- NN + 1
-    }
-  }
-}
-
-ol_ratio <- as.data.frame(ol_ratio)
-colnames(ol_ratio) <- c('pair', 'ratio')
-
-
-windows(record = F, width = 8, height = 8)
-ggplot(ol_ratio, aes(x = pair, group = pair, y = ratio)) + 
-  geom_dotplot(binaxis='y', stackdir='center', dotsize = 1) +
-  stat_summary(fun.data="mean_sdl", fun.args = list(mult=1), geom="crossbar", width=0.5) +
-  scale_x_continuous(breaks=c(1,2,3,4), labels=c("bi-biEM", "ipsi-biEM", "bi-ipsiEM", "ipsi-ipsiEM"))+
-  theme_bw()
-
-
-
-# delta  EM  ------------------------------------------------------------------------------------------------------
+# delta  EM, Figure 7S2A ------------------------------------------------------------------------------------------------------
 
 simdata_df_diff <- simdata_df[[1]][,1:3]
 simdata_df_diff$z <- simdata_df_diff$z - simdata_df[[2]]$z
@@ -979,7 +979,7 @@ ggplot(simdata_df_diff_ib, aes(x, y, z = z)) +
 dev.off()
 
 
-# cross section occoupancy  delta-EM ---------------------------------------------------------------------------------
+# cross section occupancy  delta-EM ---------------------------------------------------------------------------------
 
 # resample glo LC6
 LC6_sp_glo_rs <- LC6 # initiate
@@ -1127,9 +1127,8 @@ for (j in 1:N_cs) {
 }
 
 
-# PLOT, Figure S7E
+# PLOT, Figure 7S2E
 dd_tar <- matrix(unlist(dd_ls_tar), ncol = 9, byrow = T)
-# dd_tar <- dd_tar[seq(nrow(dd_tar),1), ] #reverse
 
 # --- choose one
 ii_target <- c(3,7) #2
@@ -1165,7 +1164,7 @@ ggplot(dfm, aes(x=pos, y=value) ) +
 dev.off()
 
 
-# Figure S7D, glo with 80 cuts
+# Figure 7S2D, glo with 80 cuts
 nopen3d()
 par3d('windowRect' = c(100,100,1700,1700))
 shade3d(glo.msh, col='grey',alpha = 0.5, lit=F)
@@ -1182,7 +1181,7 @@ segments3d(rbind(c(range_x[1]+20*2*dL,230000-cos(30/180*pi)*12000,130000-sin(30/
 # rgl.snapshot(filename = "80 sectors.png",fmt = "png")
 
 
-# Figure 7E, cross section, 
+# Figure 7S2D, cross section, 
 j <- 20
 
 ii <- o_xyz_m[,1] > (range_x[1] + (j-1)*2*dL) & o_xyz_m[,1] < (range_x[1] + (j)*2*dL)
@@ -1258,7 +1257,7 @@ dev.off()
 
 
 
-# - Figure S7, 8 LC choice
+# - Figure 7S2C, 8 LC choice
 
 windows(record = F, width = 8, height = 8)
 
@@ -1302,7 +1301,7 @@ dev.off()
 
 
 
-# target neuite vs syn --------------------------------------------------------------------------------------------
+# target neurite vs syn stats, Figure 7S3 -------------------------------------------------------------------------------------------
 
 nmb <- 16
 break_x <- seq(range_x[1] - 2*dL*nmb, range_x[2] + 2*dL*nmb, by = 2*dL*4)

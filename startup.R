@@ -1,9 +1,11 @@
 # codes used for analyze LC6 and downstream neurons
-# !!! open with encoding UTF-8
+# open all codes with encoding UTF-8 for plotting symbols
 
 # USAGE
-# 1/ run this code to load in data and libraries
-# 2/ open one of the processing script
+# 1/ first run this code to load in data and libraries
+# 2/ open one of the processing script, 
+#    "LC6_proc.R", "RI.R" and "LC6_Analysis_connMatrix.R" can be run independently.
+#    "target_proc.R" requires running "LC6_proc.R" first or loading the workspace (see beginning block)
 # 3/ search for, eg., "Figure 5B" or "Figure 5S1A" for a figure in the paper
 #    then run the code within that block
 
@@ -29,7 +31,8 @@ library(R.matlab)
 # clean everythign up.  
 rm(list=ls())
 
-#close any open rgl windows
+#close any open plotting windows
+while (dev.cur() > 1) { dev.off() }
 while (rgl.cur() > 0) { rgl.close() }
 
 # set up for 3d plots based on rgl package
@@ -48,6 +51,12 @@ buchner <- buchner / pi * 180
 
 range(buchner[buchner[,2] > 70 & buchner[,2] < 110, 1]) # [-7, 160] as horizontal range
 buchner_phi <- c(-10, 160) # for longitude
+
+# for later plotting
+bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
+bd_theta <- seq(1, 180, by = 1)
+xy_bd <- matrix(ncol = 2)
+bd_grid <- expand.grid(bd_phi, bd_theta)
 
 # functions  ---------------------------------------------------------------------
 
@@ -468,3 +477,9 @@ expIpsi_df <- data.frame(xygrid2, as.vector(t(expIpsi)))
 colnames(expIpsi_df) <- c("x","y","z")
 
 
+
+#  palettes ----------------------------------------------------------------
+
+n_lvl <- 11 # 10 compartments
+getPalette <- colorRampPalette(brewer.pal(9, "RdYlBu"))
+dolphin_col <- getPalette(n_lvl - 1)

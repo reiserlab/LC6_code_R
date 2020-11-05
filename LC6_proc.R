@@ -283,10 +283,6 @@ for (j in 1:length(xy_poly)) {
 # Figure 5D, LC6 in eye coord
 windows(record = F, width = 8, height = 8)
 # pdf(file = "LC6 LO.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
-bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
-bd_theta <- seq(1, 180, by = 1)
-xy_bd <- matrix(ncol = 2)
-bd_grid <- expand.grid(bd_phi, bd_theta)
 plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F)
 for (j in 1:length(xy_poly)) {
   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
@@ -622,10 +618,7 @@ windows(record = F, width = 8, height = 8)
 
 # pdf(file = "4 group LO.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 
-bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
-bd_theta <- seq(1, 180, by = 1)
-xy_bd <- matrix(ncol = 2)
-bd_grid <- expand.grid(bd_phi, bd_theta)
+
 plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F)
 i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
 for (j in 1:length(xy_poly)) {
@@ -834,10 +827,6 @@ windows(record = F, width = 8, height = 8)
 # pdf(file = "x min 10.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 # pdf(file = "x median.pdf", width = 8, height = 8,pointsize=12,family="Helvetica", useDingbats = F)
 
-bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
-bd_theta <- seq(1, 180, by = 1)
-xy_bd <- matrix(ncol = 2)
-bd_grid <- expand.grid(bd_phi, bd_theta)
 plot(bd_grid, ylim = rev(range(bd_grid$Var2)), type = "n", axes = FALSE, ann = F)
 for (j in 1:length(xy_poly)) {
   xy_bd <- rbind(xy_bd, xy_poly[[j]][,c('phi_deg', 'theta_deg')])
@@ -951,10 +940,6 @@ windows(record = F, width = 10.5, height = 10.5)
 
 # pdf(file = "proj and best fit.pdf", width = 10.5, height = 10.5,pointsize=12,family="Helvetica", useDingbats = F)
 
-bd_phi <- seq(buchner_phi[1], buchner_phi[2], by = 1)
-bd_theta <- seq(1, 180, by = 1)
-xy_bd <- matrix(ncol = 2)
-bd_grid <- expand.grid(bd_phi, bd_theta)
 plot(bd_grid, xlim = c(-20,215), ylim = c(190,-50), type = "n", axes = FALSE, ann = F)
 i1i <- 1; i2i <- 1; i3i <- 1; i4i <- 1
 for (j in 1:length(xy_poly)) {
@@ -1171,24 +1156,6 @@ X <- diag(c(1, sat, 1)) %*% rgb2hsv(col2rgb(dolphin_col[4:6]))
 X[2,] <- 1
 dolphin_col_456 <- hsv(X[1,], X[2,], X[3,])
 
-# Figure 6H, 3 sectors
-nopen3d()
-par3d('windowRect' = c(100,100,1600,1600))
-rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0)
-              , zoom = 0.3)
-
-# points3d(LC6_pre_glo_all, col ='grey', size=1)
-ii <- LC6_pre_glo_all[,1] > glo_div[4] & LC6_pre_glo_all[,1] < glo_div[5]
-points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[1], size = 10)
-ii <- LC6_pre_glo_all[,1] > glo_div[5] & LC6_pre_glo_all[,1] < glo_div[6]
-points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[2], size = 10)
-ii <- LC6_pre_glo_all[,1] > glo_div[6] & LC6_pre_glo_all[,1] < glo_div[7]
-points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[3], size = 10)
-
-
-shade3d(glo.msh, alpha = 0.1,lit = F)
-title3d('sectors in synapo glo')
-# rgl.snapshot(filename = "sector.png",fmt = "png")
 
 
 # Figure 6H, eg neuron
@@ -1244,16 +1211,35 @@ for (j in 1:length(LC6)) {
 
 LC6_pre_glo_all <- do.call(rbind.data.frame, LC6_pre_glo)
 
-# check numbers within each compartment
-N_pre_comp <- matrix(ncol = 10, nrow = 65)
-for (j in 1:65) {
-  xx <- LC6_pre_glo[[j]][,1]
-  for (k in 1:10) {
-    N_pre_comp[j,k] <- sum(xx > glo_div[k] & xx < glo_div[k+1])
-  }
-}
+# Figure 6H, 3 sectors
+nopen3d()
+par3d('windowRect' = c(100,100,1600,1600))
+rgl.viewpoint(userMatrix = rotationMatrix(30/180*pi,0,1,0) %*% rotationMatrix(150/180*pi,1,0,0)
+              , zoom = 0.3)
 
-colSums(N_pre_comp == 0)
+# points3d(LC6_pre_glo_all, col ='grey', size=1)
+ii <- LC6_pre_glo_all[,1] > glo_div[4] & LC6_pre_glo_all[,1] < glo_div[5]
+points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[1], size = 10)
+ii <- LC6_pre_glo_all[,1] > glo_div[5] & LC6_pre_glo_all[,1] < glo_div[6]
+points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[2], size = 10)
+ii <- LC6_pre_glo_all[,1] > glo_div[6] & LC6_pre_glo_all[,1] < glo_div[7]
+points3d(LC6_pre_glo_all[ii,], col = dolphin_col_456[3], size = 10)
+
+
+shade3d(glo.msh, alpha = 0.1,lit = F)
+title3d('sectors in synapo glo')
+# rgl.snapshot(filename = "sector.png",fmt = "png")
+
+# # check numbers within each compartment
+# N_pre_comp <- matrix(ncol = 10, nrow = 65)
+# for (j in 1:65) {
+#   xx <- LC6_pre_glo[[j]][,1]
+#   for (k in 1:10) {
+#     N_pre_comp[j,k] <- sum(xx > glo_div[k] & xx < glo_div[k+1])
+#   }
+# }
+# 
+# colSums(N_pre_comp == 0)
 
 
 
